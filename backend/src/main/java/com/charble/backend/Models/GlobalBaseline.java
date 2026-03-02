@@ -17,7 +17,6 @@ public class GlobalBaseline
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    @Column(name = "category_id")
     private Category m_categoryId;
 
     @Column(name = "mean")
