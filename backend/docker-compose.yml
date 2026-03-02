@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # 1. The PostgreSQL Database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ranking_admin
+      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_DB: global_ranking
+    ports:
+      - "5432:5432"
+
+  # 2. Your Java Application
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Notice the URL uses "db" (the service name above) instead of "localhost"
+      - DB_URL=jdbc:postgresql://db:5432/global_ranking
+      - DB_USER=ranking_admin
+      - DB_PASSWORD=supersecretpassword
+    depends_on:
+      - db

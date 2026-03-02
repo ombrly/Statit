@@ -77,6 +77,7 @@ export default function App() {
   );
 }
 
+<<<<<<< HEAD
 // --- APP CONTENT ---
 const AppContent = ({ categories, setCategories, allStats, setAllStats, users, setUsers, currentUser, setCurrentUser }) => {
   const location = useLocation();
@@ -331,3 +332,6 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
     </div>
   );
 };
+=======
+export default App
+>>>>>>> 87432a73a2b8bd4bb6708e0ccf5bc26d4c448c11

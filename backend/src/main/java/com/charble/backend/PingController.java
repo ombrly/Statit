@@ -14,4 +14,10 @@ public class PingController
         return Map.of("message", "pong");
     }
 
+    @GetMapping("/api/personal")
+    public Map<String, String> personal()
+    {
+        return Map.of("message", "charles");
+    }
+
 }
