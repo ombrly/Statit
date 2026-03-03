@@ -17,12 +17,10 @@ public class Score
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    @Column(name = "category_id")
     private Category m_categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @Column(name = "user_id")
     private User m_userId;
 
     @Column(name = "score_value", nullable = false)

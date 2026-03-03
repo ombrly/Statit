@@ -25,9 +25,8 @@ public class Category
     private Boolean m_sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @Column(name = "founding_user")
-    private User m_foundingUser;
+    @JoinColumn(name = "founding_user_id", nullable = false)
+    private User m_foundingUserId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
@@ -37,6 +36,6 @@ public class Category
     public UUID categoryId() { return m_categoryId; }
     public String units() { return m_units; }
     public Boolean sortOrder() { return m_sortOrder; }
-    public User foundingUser() { return m_foundingUser; }
+    public User foundingUserId() { return m_foundingUserId; }
     public LocalDateTime createdAt() { return m_createdAt; }
 }
