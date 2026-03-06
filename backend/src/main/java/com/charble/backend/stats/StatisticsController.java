@@ -1,8 +1,9 @@
 package com.charble.backend.stats;
-import com.charble.backend.Models.Category;
-import com.charble.backend.Models.Score;
-import com.charble.backend.Repositories.CategoryRepository;
-import com.charble.backend.Repositories.ScoreRepository;
+
+import com.charble.backend.model.Category;
+import com.charble.backend.model.Score;
+import com.charble.backend.repository.CategoryRepository;
+import com.charble.backend.repository.ScoreRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,7 +58,6 @@ public class StatisticsController {
      Retrieves detailed stats for a specific category.
      @param userValue An optional score from the current user to see how they rank against others.
      */
-    @param userValue 
     @GetMapping("/categories/{categoryId}")
     public ResponseEntity<?> categoryStats(
             @PathVariable String categoryId,
@@ -141,7 +141,7 @@ public class StatisticsController {
 
     
     private boolean belongsToCategory(Score score, UUID categoryId) {
-        Category scoreCategory = score.categoryId();
+        Category scoreCategory = score.category();
         return scoreCategory != null && scoreCategory.categoryId() != null
                 && scoreCategory.categoryId().equals(categoryId);
     }
