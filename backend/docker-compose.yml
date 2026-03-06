@@ -27,12 +27,12 @@ services:
       - "8080:8080"
     environment:
       # Database connection
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/global_ranking
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/global_ranking
       - SPRING_DATASOURCE_USERNAME=ranking_admin
       - SPRING_DATASOURCE_PASSWORD=supersecretpassword
 
       # 1. Tells Hibernate to create/update the tables based on your @Entity classes
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=create
 
       # 2. Prints the actual "CREATE TABLE" SQL statements in your console!
       - SPRING_JPA_SHOW_SQL=true
