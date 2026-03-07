@@ -65,9 +65,9 @@ public class Category
     //Getters
     public UUID getCategoryId()                    { return categoryId; }
     public String getName()                        { return categoryName; }
-    public Boolean isSeparatedByRegion()        { return separateByRegion; }
-    public Boolean isSeparatedBySex()           { return separateBySex; }
-    public Boolean isSeparatedByAgeRange()      { return separateByAgeRange; }
+    public Boolean isSeparatedByRegion()           { return separateByRegion; }
+    public Boolean isSeparatedBySex()              { return separateBySex; }
+    public Boolean isSeparatedByAgeRange()         { return separateByAgeRange; }
     public String getUnits()                       { return units; }
     public Boolean getSortOrder()                  { return sortOrder; }
     public User getFoundingUser()                  { return foundingUser; }
