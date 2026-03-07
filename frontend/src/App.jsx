@@ -5,9 +5,18 @@
 
 import React, { useState } from 'react';
 
+// Reusable style to keep code clean
+const centeredpageStyle = {
+  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+  minHeight: '100vh', width: '100vw', fontFamily: 'sans-serif', padding: '20px',
+  boxSizing: 'border-box', textAlign: 'center', position: 'relative',
+  backgroundColor: '#fdfdfd'
+};
+
 // 1. Define your "Pages" as mini-components
 const HomePage = ({ setPage }) => (
-  <div style={{ textAlign: 'center' }}>
+  //<div style ={{ textAlign: 'center' }}>
+  <div style={centeredPageStyle}>
     <h1>Welcome to Global Ranking System!</h1>
     <button onClick={() => setPage('GlobalRankingPage')}>Go to Global Data</button>
     <button onClick={() => setPage('LocalRankingPage')}>Go to Local Data</button>
@@ -15,14 +24,14 @@ const HomePage = ({ setPage }) => (
 );
 
 const GlobalRankingPage = ({ setPage}) => (
-  <div style ={{ textAlign: 'center' }}> 
+  <div style={centeredPageStyle}>
     <h1> Global data </h1>
     <button onClick={() => setPage('home')}>Back to Home</button>
   </div>
 );
 
 const LocalRankingPage = ({ setPage}) => (
-  <div style ={{ textAlign: 'center' }}>
+    <div style={centeredPageStyle}>
     <h1> Local data </h1>
     <button onClick={() => setPage('home')}>Back to Home</button>
   </div>
