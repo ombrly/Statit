@@ -20,7 +20,6 @@ const pageWrapperStyle = {
   backgroundColor: '#fdfdfd'
 };
 
-// Added zIndex: 10 so it doesn't get hidden behind the page wrapper!
 const topNavStyle = {
   position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 10
 };
@@ -46,7 +45,8 @@ const funTitleStyle = {
 };
 
 // --- MAIN APP ---
-export default function App() {
+// Removed "export default" from here
+function App() {
   const defaultPresets = [
     { name: "Wealth", better: "large", unit: "$", type: "global" },
     { name: "Health", better: "large", unit: "pts", type: "global" },
@@ -272,32 +272,24 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
   const catInfo = categories.find(c => c.name === categoryName) || { better: 'large', unit: '', type: 'global' };
   const currentStats = allStats[categoryName] || [];
   
-  // Input form states
   const [val, setVal] = useState("");
   const [gender, setGender] = useState("Male");
   const [region, setRegion] = useState("North America");
-  
-  // View controls
-  const [viewMode, setViewMode] = useState("Global"); // 'Global', 'Gender', 'Region'
+  const [viewMode, setViewMode] = useState("Global"); 
   const displayName = currentUser?.isAnonymous ? "Anonymous" : currentUser?.username;
 
   const addEntry = (e) => {
     e.preventDefault();
     if (!val) return;
-    
-    // Save entry with tagged region and gender
     const newEntry = { name: displayName, value: parseFloat(val), gender, region };
     const updated = [...currentStats, newEntry]; 
-    
     setAllStats(prev => ({ ...prev, [categoryName]: updated }));
     setVal(""); 
   };
 
   const getRankDisplay = (i) => i === 0 ? "1st 🥇" : i === 1 ? "2nd 🥈" : i === 2 ? "3rd 🥉" : `${i + 1}th`;
 
-  // Reusable function to render standard tables based on filtered data
   const renderTable = (title, statsToRender) => {
-    // Sort and grab top 100 for THIS specific view
     const sorted = [...statsToRender]
       .sort((a, b) => catInfo.better === "large" ? b.value - a.value : a.value - b.value)
       .slice(0, 100);
@@ -333,21 +325,16 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
       <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>{categoryName} Rankings</h2>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', marginBottom: '40px' }}>
-        
-        {/* SUBMISSION FORM WITH DEMOGRAPHICS */}
         <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
-          
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px' }} required />
             <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.unit}</span>
           </div>
-
           <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
-
           <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={region} onChange={e => setRegion(e.target.value)}>
             <option value="North America">North America</option>
             <option value="South America">South America</option>
@@ -357,13 +344,9 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
             <option value="Australia/Oceania">Australia/Oceania</option>
             <option value="Antarctica">Antarctica</option>
           </select>
-
           <input style={{ ...inputStyle, width: '220px', textAlign: 'center', backgroundColor: '#f3f4f6', color: '#666', cursor: 'not-allowed', marginBottom: 0 }} value={displayName} readOnly title="Change this in your Profile" />
-          
           <button type="submit" style={{ ...mainButtonStyle, width: '220px', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white' }}>Add Entry</button>
         </form>
-
-        {/* VIEW MODE SELECTOR */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>View Leaderboards</h3>
           <select style={{ ...inputStyle, border: '2px solid #8b5cf6', fontSize: '1.2rem', width: '220px', padding: '15px' }} value={viewMode} onChange={e => setViewMode(e.target.value)}>
@@ -371,22 +354,15 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
             <option value="Gender">🚻 By Gender</option>
             <option value="Region">🗺️ By Region</option>
           </select>
-          <p style={{ color: '#666', maxWidth: '200px', fontSize: '0.95rem' }}>
-            Select a filter to dynamically split the leaderboards below!
-          </p>
         </div>
-
       </div>
 
-      {/* DYNAMIC TABLES CONTAINER */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%', maxWidth: '1400px' }}>
         {viewMode === 'Global' && renderTable('Global', currentStats)}
-        
         {viewMode === 'Gender' && [
           renderTable('Male', currentStats.filter(s => s.gender === 'Male')),
           renderTable('Female', currentStats.filter(s => s.gender === 'Female'))
         ]}
-        
         {viewMode === 'Region' && [
           renderTable('North America', currentStats.filter(s => s.region === 'North America')),
           renderTable('South America', currentStats.filter(s => s.region === 'South America')),
@@ -400,3 +376,6 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
     </div>
   );
 };
+
+// --- THE NEW BOTTOM EXPORT ---
+export default App;
