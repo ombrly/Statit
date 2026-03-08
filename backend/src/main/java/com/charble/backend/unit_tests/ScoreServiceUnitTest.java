@@ -13,6 +13,8 @@ package com.charble.backend.unit_tests;
 // Imports
 //----------------------------------------------------------------------------------------------------
 
+import com.charble.backend.dto.LeaderboardEntry;
+import com.charble.backend.dto.LeaderboardResponse;
 import com.charble.backend.model.*;
 
 import com.charble.backend.repository.*;
@@ -83,7 +85,7 @@ public class ScoreServiceUnitTest
                             "Category used for unit tests",
                             "Test Units",
                             testTags,
-                            false,
+                            true,
                             testUser
                     );
 
@@ -125,19 +127,24 @@ public class ScoreServiceUnitTest
 
     }
 
-    @GetMapping("/scores")
-    public ResponseEntity<Page<Score>> getScores(
+    @GetMapping("/top-scores")
+    public ResponseEntity<LeaderboardResponse> getScores(
             @RequestParam UUID categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size)
     {
-        Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
-        return ResponseEntity.ok(scores);
-    }
+        Category category = categoryRepository.findById(categoryId).orElse(null);
 
-    //------------------------------------------------------------------------------------------------
-    // Private Methods
-    //------------------------------------------------------------------------------------------------
+        if(category != null)
+        {
+            Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
+            return ResponseEntity.ok(LeaderboardResponse.fromPage(category, scores));
+        }
+        else
+        {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     //------------------------------------------------------------------------------------------------
     // Private Variables
