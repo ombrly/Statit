@@ -1,7 +1,7 @@
 /**
  * Filename: Score.java
  * Author: Charles Bassani
- * Description: Score DTO and model
+ * Description: Score DTO and model, utilizing JSONB for dynamic tags.
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -14,8 +14,12 @@ package com.charble.backend.model;
 //----------------------------------------------------------------------------------------------------
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 //----------------------------------------------------------------------------------------------------
 // Class Definition
@@ -32,11 +36,13 @@ public class Score
     public Score(Category category,
                  User user,
                  Float score,
+                 Map<String, String> tags,
                  Boolean anonymous)
     {
         this.category = category;
         this.user = user;
         this.score = score;
+        this.tags = tags != null ? tags : new HashMap<>();
         this.anonymous = anonymous;
         this.rejected = false;
     }
@@ -47,12 +53,14 @@ public class Score
     public void update(Category category,
                        User user,
                        Float score,
+                       Map<String, String> tags,
                        Boolean anonymous,
                        Boolean rejected)
     {
         this.category = category;
         this.user = user;
         this.score = score;
+        this.tags = tags != null ? tags : new HashMap<>();
         this.anonymous = anonymous;
         this.rejected = rejected;
     }
@@ -62,12 +70,13 @@ public class Score
     public Category getCategory()          { return category; }
     public User getUser()                  { return user; }
     public float getScore()                { return score; }
+    public Map<String, String> getTags()   { return tags; }
     public Boolean getAnonymous()          { return anonymous; }
     public LocalDateTime getSubmittedAt()  { return submittedAt; }
 
     //Setters
-    public void setRejected(Boolean rejected) { this.rejected = rejected; }
-
+    public void setRejected(Boolean rejected)            { this.rejected = rejected; }
+    public void setTags(Map<String, String> tags)        { this.tags = tags; }
 
     //------------------------------------------------------------------------------------------------
     // Private Variables
@@ -87,6 +96,10 @@ public class Score
 
     @Column(name = "score_value", nullable = false)
     private Float score;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "tags", columnDefinition = "jsonb")
+    private Map<String, String> tags = new HashMap<>();
 
     @Column(name = "is_anonymous", nullable = false)
     private Boolean anonymous;

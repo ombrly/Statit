@@ -23,6 +23,8 @@ import com.charble.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,7 +52,7 @@ public class ScoreService
     // Public Methods
     //------------------------------------------------------------------------------------------------
     @Transactional
-    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Boolean isAnonymous) {
+    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Map<String, String> scoreTags, Boolean isAnonymous) {
 
         //Fetch the user and category
         User user = userRepository.findById(userId)
@@ -60,8 +62,20 @@ public class ScoreService
 
         Score previousTopScore = getTopScoreForUser(category, user).orElse(null);
 
+
+        //JSONB tage merge
+        Map<String, String> finalTags = new HashMap<>();
+        if(user.getDemographics() != null) finalTags.putAll(user.getDemographics());
+
+        //Add age tags
+        finalTags.put("age_months", String.valueOf(user.getAgeMonths()));
+        finalTags.put("age_years", String.valueOf(user.getAgeYears()));
+
+        //Add other tags
+        if(scoreTags != null) finalTags.putAll(scoreTags);
+
         //Save the new score
-        Score newScore = new Score(category, user, scoreValue, isAnonymous);
+        Score newScore = new Score(category, user, scoreValue, finalTags, isAnonymous);
         scoreRepository.save(newScore);
         scoreRepository.flush();
 
@@ -214,7 +228,6 @@ public class ScoreService
         baseline.setMean(newMean);
         baseline.setStandardDeviation(newStdDev);
         baseline.setSampleSize(newN);
-
 
         //Save record
         globalBaselineRepository.save(baseline);

@@ -81,48 +81,39 @@ public class OwidHeightBaselineService {
                         SYSTEM_EMAIL,
                         PLACEHOLDER_HASH,
                         null,
-                        null,
-                        null,
                         null
                 )));
 
         Category heightCategory = categoryRepository.findByName(HEIGHT_CATEGORY_NAME)
                 .orElseGet(() -> categoryRepository.save(
-                        new Category(HEIGHT_CATEGORY_NAME, HEIGHT_UNIT,
-                                false, false, false, true, systemUser)));
+                        new Category(HEIGHT_CATEGORY_NAME, null, null, HEIGHT_UNIT, false, systemUser)));
 
         String sourceName = "OWID average-height-by-year-of-birth (latest year " + latestYear + ")";
 
         GlobalBaseline baseline = globalBaselineRepository.findByCategory(heightCategory)
                 .orElse(new GlobalBaseline(
                         heightCategory,
-                        Region.UNKNOWN,
-                        Sex.UNKNOWN,
                         null,
-                        null,
-                        (float) summary.mean(),
-                        (float) summary.median(),
-                        (float) summary.standardDeviation(),
+                        0.0f,
+                        0.0f,
+                        0.0f,
                         null,
                         null,
                         null,
-                        summary.sampleSize(),
-                        sourceName
+                        0,
+                        "My Global Ranking Team"
                 ));
 
         baseline.update(
-                Region.UNKNOWN,
-                Sex.UNKNOWN,
                 null,
-                null,
-                (float) summary.mean(),
-                (float) summary.median(),
-                (float) summary.standardDeviation(),
+                0.0f,
+                0.0f,
+                0.0f,
                 null,
                 null,
                 null,
-                summary.sampleSize(),
-                sourceName
+                0,
+                "My Global Ranking Team"
         );
         globalBaselineRepository.save(baseline);
 

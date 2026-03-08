@@ -1,7 +1,7 @@
 /**
  * Filename: User.java
  * Author: Charles Bassani
- * Description: User DTO and model
+ * Description: User DTO and model, utilizing JSONB for dynamic demographics.
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -12,13 +12,15 @@ package com.charble.backend.model;
 //----------------------------------------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------------------------------------
-import com.charble.backend.model.enums.*;
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 //----------------------------------------------------------------------------------------------------
 // Class Definition
@@ -36,17 +38,13 @@ public class User
                 String email,
                 String passwordHash,
                 LocalDateTime birthday,
-                Integer ageMonths,
-                Region region,
-                Sex sex)
+                Map<String, String> demographics)
     {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.birthday = birthday;
-        this.ageMonths = ageMonths;
-        this.region = region;
-        this.sex = sex;
+        this.demographics = demographics != null ? demographics : new HashMap<>();
     }
 
     //------------------------------------------------------------------------------------------------
@@ -56,38 +54,42 @@ public class User
                        String email,
                        String passwordHash,
                        LocalDateTime birthday,
-                       Integer ageMonths,
-                       Region region,
-                       Sex sex)
+                       Map<String, String> demographics)
     {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.birthday = birthday;
-        this.ageMonths = ageMonths;
-        this.region = region;
-        this.sex = sex;
+        this.demographics = demographics != null ? demographics : new HashMap<>();
+    }
+
+    //Age calculations
+    public Integer getAgeMonths()
+    {
+        if (birthday == null) return 0;
+        return (int)ChronoUnit.MONTHS.between(birthday, LocalDateTime.now());
+    }
+    public Integer getAgeYears()
+    {
+        if (birthday == null) return 0;
+        return (int)ChronoUnit.YEARS.between(birthday, LocalDateTime.now());
     }
 
     //Getters
-    public UUID getUserId()                { return userId; }
-    public String getUsername()            { return username; }
-    public String getEmail()               { return email; }
-    public String getPasswordHash()        { return passwordHash; }
-    public LocalDateTime getCreatedAt()    { return createdAt; }
-    public LocalDateTime getBirthday()     { return birthday; }
-    public Integer getAgeMonths()          { return (int)ChronoUnit.MONTHS.between(birthday, LocalDateTime.now()); }
-    public Integer getAgeYears()           { return (int)ChronoUnit.YEARS.between(birthday, LocalDateTime.now()); }
-    public Region getRegion()              { return region; }
-    public Sex getSex()                    { return sex; }
+    public UUID getUserId()                      { return userId; }
+    public String getUsername()                  { return username; }
+    public String getEmail()                     { return email; }
+    public String getPasswordHash()              { return passwordHash; }
+    public LocalDateTime getCreatedAt()          { return createdAt; }
+    public LocalDateTime getBirthday()           { return birthday; }
+    public Map<String, String> getDemographics() { return demographics; }
 
     //Setters
-    public void setUsername(String username)            { this.username = username; }
-    public void setEmail(String email)                  { this.email = email; }
-    public void setPasswordHash(String passwordHash)    { this.passwordHash = passwordHash; }
-    public void setBirthday(LocalDateTime birthday)     { this.birthday = birthday; }
-    public void setRegion(Region region)                { this.region = region; }
-    public void setSex(Sex sex)                         { this.sex = sex; }
+    public void setUsername(String username)                        { this.username = username; }
+    public void setEmail(String email)                              { this.email = email; }
+    public void setPasswordHash(String passwordHash)                { this.passwordHash = passwordHash; }
+    public void setBirthday(LocalDateTime birthday)                 { this.birthday = birthday; }
+    public void setDemographics(Map<String, String> demographics)   { this.demographics = demographics; }
 
     //------------------------------------------------------------------------------------------------
     // Private Variables
@@ -103,7 +105,7 @@ public class User
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash", unique = false, nullable = false, length = 100)
+    @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
     @CreationTimestamp
@@ -113,14 +115,8 @@ public class User
     @Column(name = "birthday")
     private LocalDateTime birthday;
 
-    @Column(name = "ageMonths")
-    private Integer ageMonths;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "region")
-    private Region region;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "sex")
-    private Sex sex;
+    // This is the Postgres JSONB magic
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "demographics", columnDefinition = "jsonb")
+    private Map<String, String> demographics = new HashMap<>();
 };

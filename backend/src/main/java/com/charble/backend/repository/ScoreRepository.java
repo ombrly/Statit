@@ -36,4 +36,6 @@ public interface ScoreRepository extends JpaRepository<Score, UUID>
     Optional<Score> findFirstByCategoryAndUserOrderByScoreDesc(Category category, User user);
 
     Optional<Score> findFirstByCategoryAndUserOrderByScoreAsc(Category category, User user);
+
+    void deleteAllByCategory(Category category);
 }

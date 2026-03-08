@@ -32,4 +32,6 @@ public interface GlobalBaselineRepository extends JpaRepository<GlobalBaseline, 
     //------------------------------------------------------------------------------------------------
     @Query("SELECT gb FROM GlobalBaseline gb WHERE gb.category = ?1")
     Optional<GlobalBaseline> findByCategory(Category category);
+
+    void deleteAllByCategory(Category category);
 }

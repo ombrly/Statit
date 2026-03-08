@@ -1,7 +1,7 @@
 /**
  * Filename: GlobalBaseline.java
  * Author: Charles Bassani
- * Description: GlobalBaseline DTO and model
+ * Description: GlobalBaseline DTO and model, utilizing JSONB for dynamic filtering
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -12,9 +12,12 @@ package com.charble.backend.model;
 //----------------------------------------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------------------------------------
-import com.charble.backend.model.enums.*;
-
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 //----------------------------------------------------------------------------------------------------
@@ -30,10 +33,7 @@ public class GlobalBaseline
     public GlobalBaseline() {}
 
     public GlobalBaseline(Category category,
-                          Region region,
-                          Sex sex,
-                          Integer ageMonthsMin,
-                          Integer ageMonthsMax,
+                          Map<String, String> filters,
                           Float mean,
                           Float median,
                           Float standardDeviation,
@@ -44,10 +44,7 @@ public class GlobalBaseline
                           String sourceName)
     {
         this.category = category;
-        this.region = region;
-        this.sex = sex;
-        this.ageMonthsMin = ageMonthsMin;
-        this.ageMonthsMax = ageMonthsMax;
+        this.filters = filters != null ? filters : new HashMap<>();
         this.mean = mean;
         this.median = median;
         this.standardDeviation = standardDeviation;
@@ -61,15 +58,13 @@ public class GlobalBaseline
     public GlobalBaseline(Category category)
     {
         this.category = category;
+        this.filters = new HashMap<>();
     }
 
     //------------------------------------------------------------------------------------------------
     // Public Functions
     //------------------------------------------------------------------------------------------------
-    public void update(Region region,
-                       Sex sex,
-                       Integer ageMonthsMin,
-                       Integer ageMonthsMax,
+    public void update(Map<String, String> filters,
                        Float mean,
                        Float median,
                        Float standardDeviation,
@@ -79,10 +74,8 @@ public class GlobalBaseline
                        Integer sampleSize,
                        String sourceName)
     {
-        this.region = region;
-        this.sex = sex;
-        this.ageMonthsMin = ageMonthsMin;
-        this.ageMonthsMax = ageMonthsMax;
+        this.category = category;
+        this.filters = filters != null ? filters : new HashMap<>();
         this.mean = mean;
         this.median = median;
         this.standardDeviation = standardDeviation;
@@ -94,18 +87,20 @@ public class GlobalBaseline
     }
 
     //Getters
-    public UUID getBaselineId()            { return baselineId; }
-    public Category getCategory()          { return category; }
-    public Float getMean()                 { return mean; }
-    public Float getMedian()               { return median; }
-    public Float getStandardDeviation()    { return standardDeviation; }
-    public Float getLambda()               { return lambda; }
-    public Float getMu()                   { return mu; }
-    public Float getSigma()                { return sigma; }
-    public Integer getSampleSize()         { return sampleSize; }
-    public String getSourceName()          { return sourceName; }
+    public UUID getBaselineId()                  { return baselineId; }
+    public Category getCategory()                { return category; }
+    public Map<String, String> getFilters()      { return filters; }
+    public Float getMean()                       { return mean; }
+    public Float getMedian()                     { return median; }
+    public Float getStandardDeviation()          { return standardDeviation; }
+    public Float getLambda()                     { return lambda; }
+    public Float getMu()                         { return mu; }
+    public Float getSigma()                      { return sigma; }
+    public Integer getSampleSize()               { return sampleSize; }
+    public String getSourceName()                { return sourceName; }
 
     //Setters
+    public void setFilters(Map<String, String> filters)             { this.filters = filters; }
     public void setMean(Float mean)                                 { this.mean = mean; }
     public void setMedian(Float median)                             { this.median = median; }
     public void setStandardDeviation(Float standardDeviation)       { this.standardDeviation = standardDeviation; }
@@ -113,7 +108,7 @@ public class GlobalBaseline
     public void setMu(Float mu)                                     { this.mu = mu; }
     public void setSigma(Float sigma)                               { this.sigma = sigma; }
     public void setSampleSize(Integer sampleSize)                   { this.sampleSize = sampleSize; }
-    public void setSourceName(String sourceNAme)                    { this.sourceName = sourceName; }
+    public void setSourceName(String sourceName)                    { this.sourceName = sourceName; }
 
     //------------------------------------------------------------------------------------------------
     // Private Variables
@@ -127,17 +122,9 @@ public class GlobalBaseline
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(name = "region")
-    private Region region;
-
-    @Column(name = "sex")
-    private Sex sex;
-
-    @Column(name = "age_months_min")
-    private Integer ageMonthsMin;
-
-    @Column(name = "age_months_max")
-    private Integer ageMonthsMax;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "filters", columnDefinition = "jsonb")
+    private Map<String, String> filters = new HashMap<>();
 
     @Column(name = "mean")
     private Float mean;
@@ -162,4 +149,4 @@ public class GlobalBaseline
 
     @Column(name = "source_name")
     private String sourceName;
-};
+}
