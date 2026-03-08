@@ -1,15 +1,34 @@
+/**
+ * Filename: Category.java
+ * Author: Charles Bassani
+ * Description: Category DTO and model
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
 package com.charble.backend.model;
 
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
 
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
 @Entity
 @Table(name = "categories")
 public class Category
 {
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public Category() {}
+
     public Category(String name,
                     String units,
                     Boolean separateByRegion,
@@ -27,9 +46,10 @@ public class Category
         this.foundingUser = foundingUser;
     }
 
-    public Category() {}
-
-    public void UpdateCategory(String units,
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    public void update(String units,
                                Boolean separateByRegion,
                                Boolean separateBySex,
                                Boolean separateByAgeRange,
@@ -42,12 +62,29 @@ public class Category
         this.sortOrder = sortOrder;
     }
 
+    //Getters
+    public UUID getCategoryId()                    { return categoryId; }
+    public String getName()                        { return categoryName; }
+    public Boolean isSeparatedByRegion()           { return separateByRegion; }
+    public Boolean isSeparatedBySex()              { return separateBySex; }
+    public Boolean isSeparatedByAgeRange()         { return separateByAgeRange; }
+    public String getUnits()                       { return units; }
+    public Boolean getSortOrder()                  { return sortOrder; }
+    public User getFoundingUser()                  { return foundingUser; }
+    public LocalDateTime getCreatedAt()            { return createdAt; }
+
+    //Setters
+    public void setName(String name) { this.categoryName = name; }
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "category_id")
     private UUID categoryId;
 
-    @Column(name = "name", unique = true, nullable = false, length = 255)
+    @Column(name = "name", unique = true, nullable = false)
     private String categoryName;
 
     @Column(name = "units_of_measurement", nullable = false, length = 20)
@@ -72,15 +109,4 @@ public class Category
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    //Getters
-    public UUID categoryId()                    { return categoryId; }
-    public String name()                        { return categoryName; }
-    public Boolean isSeparatedByRegion()        { return separateByRegion; }
-    public Boolean isSeparatedBySex()           { return separateBySex; }
-    public Boolean isSeparatedByAgeRange()      { return separateByAgeRange; }
-    public String units()                       { return units; }
-    public Boolean sortOrder()                  { return sortOrder; }
-    public User foundingUser()                  { return foundingUser; }
-    public LocalDateTime createdAt()            { return createdAt; }
-}
+};

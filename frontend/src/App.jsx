@@ -1,10 +1,5 @@
-// Commands to run for just running frontend on its own:
-// npm install
-// npm run dev 
-// Then open http://localhost:5173 in your browser to see the app. 
-
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
 // --- HELPERS ---
 const getStorage = (key, defaultValue) => {
@@ -16,15 +11,27 @@ const getStorage = (key, defaultValue) => {
 const pageWrapperStyle = {
   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
   minHeight: '100vh', width: '100vw', fontFamily: 'sans-serif', padding: '20px',
+  paddingTop: '100px', // Prevents content from hiding under top bar
   boxSizing: 'border-box', textAlign: 'center', position: 'relative',
   backgroundColor: '#fdfdfd'
 };
 
 const topNavStyle = {
-  position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px', alignItems: 'center'
+  position: 'fixed', top: 0, left: 0, width: '100vw', height: '75px', 
+  backgroundColor: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', 
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+  padding: '0 30px', boxSizing: 'border-box', zIndex: 1000
 };
 
-const backLinkStyle = { position: 'absolute', top: '20px', left: '20px', textDecoration: 'none', color: '#8b5cf6', fontWeight: 'bold', fontSize: '1.1rem' };
+const logoStyle = {
+  height: '50px', width: 'auto', cursor: 'pointer' 
+};
+
+const navLinksStyle = {
+  display: 'flex', gap: '15px', alignItems: 'center'
+};
+
+const backLinkStyle = { position: 'absolute', top: '100px', left: '20px', textDecoration: 'none', color: '#8b5cf6', fontWeight: 'bold', fontSize: '1.1rem', zIndex: 10 };
 const inputStyle = { padding: '12px', borderRadius: '8px', border: '1px solid #ccc', width: '280px', marginBottom: '15px', fontSize: '1rem' };
 
 const mainButtonStyle = { 
@@ -37,7 +44,6 @@ const smallButtonStyle = {
   backgroundColor: '#fff', fontSize: '1rem', fontWeight: 'bold', color: '#333', transition: '0.2s'
 };
 
-// The new "Fun Font" style for the main titles
 const funTitleStyle = {
   fontSize: '3.2rem', 
   marginBottom: '40px', 
@@ -62,7 +68,6 @@ export default function App() {
     localStorage.setItem('categories', JSON.stringify(categories));
     localStorage.setItem('allStats', JSON.stringify(allStats));
     localStorage.setItem('users', JSON.stringify(users));
-    localStorage.removeItem('currentUser'); // Forgets session on refresh
   }, [categories, allStats, users]);
 
   return (
@@ -79,61 +84,61 @@ export default function App() {
 
 // --- APP CONTENT ---
 const AppContent = ({ categories, setCategories, allStats, setAllStats, users, setUsers, currentUser, setCurrentUser }) => {
-  const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-  const isHomePage = location.pathname === '/';
-
   const logout = () => setCurrentUser(null);
 
   return (
     <>
-      {!isAuthPage && !isHomePage && (
-        <div style={topNavStyle}>
+      <div style={topNavStyle}>
+        <Link to="/">
+          <img src="/logo.webp" alt="Global Ranking Logo" style={logoStyle} />
+        </Link>
+
+        <div style={navLinksStyle}>
+          <Link to="/global">
+            <button className="nav-button">Global Categories</button>
+          </Link>
+          
           {currentUser && (
-            <>
-              <Link to="/profile"><button style={smallButtonStyle}>Profile</button></Link>
-              <button onClick={logout} style={smallButtonStyle}>Log out</button>
-            </>
+            <Link to="/profile">
+              <button className="nav-button">Profile</button>
+            </Link>
+          )}
+
+          {currentUser ? (
+            <button onClick={logout} className="nav-button">Log out</button>
+          ) : (
+            <Link to="/login">
+              <button className="nav-button">Login</button>
+            </Link>
           )}
         </div>
-      )}
+      </div>
 
       <Routes>
-        <Route path="/" element={currentUser ? <Home logout={logout} /> : <Navigate to="/login" />} />
+        <Route path="/" element={currentUser ? <Home /> : <Navigate to="/login" />} />
         <Route path="/login" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="login" users={users} setCurrentUser={setCurrentUser} />} />
         <Route path="/signup" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="signup" users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} />} />
         <Route path="/profile" element={currentUser ? <ProfilePage currentUser={currentUser} setUsers={setUsers} setCurrentUser={setCurrentUser} /> : <Navigate to="/login" />} />
-        <Route path="/global" element={currentUser ? <CategoryList title="Global Categories" categories={categories.filter(c => c.type === 'global')} /> : <Navigate to="/login" />} />
+        
+        {/* Unlocked Routes */}
+        <Route path="/global" element={<CategoryList title="Global Categories" categories={categories.filter(c => c.type === 'global')} />} />
         <Route path="/created" element={currentUser ? <CategoryList title="Your Created Categories" categories={categories.filter(c => c.type !== 'global')} /> : <Navigate to="/login" />} />
         <Route path="/create" element={currentUser ? <CreateCategory setCategories={setCategories} /> : <Navigate to="/login" />} />
-        <Route path="/ranking/:categoryName" element={currentUser ? <RankingPage categories={categories} allStats={allStats} setAllStats={setAllStats} currentUser={currentUser} /> : <Navigate to="/login" />} />
+        <Route path="/ranking/:categoryName" element={<RankingPage categories={categories} allStats={allStats} setAllStats={setAllStats} currentUser={currentUser} />} />
       </Routes>
     </>
   );
 };
 
 // --- HOME PAGE ---
-const Home = ({ logout }) => (
+const Home = () => (
   <div style={pageWrapperStyle}>
-    {/* Applied funTitleStyle here */}
     <h1 style={funTitleStyle}>WELCOME TO GLOBAL RANKING SYSTEM! 🏆</h1>
     
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
       <Link to="/global"><button style={mainButtonStyle}>Global Category</button></Link>
       <Link to="/create"><button style={mainButtonStyle}>Create Your Own</button></Link>
       <Link to="/created"><button style={mainButtonStyle}>See Created Categories</button></Link>
-    </div>
-
-    <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-      <Link to="/profile">
-        <button style={{ ...smallButtonStyle, width: '120px', fontSize: '1.1rem' }}>Profile</button>
-      </Link>
-      <button 
-        onClick={logout} 
-        style={{ ...smallButtonStyle, width: '120px', fontSize: '1.1rem', backgroundColor: '#ff4d4d', color: 'white', border: 'none' }}
-      >
-        Log out
-      </button>
     </div>
   </div>
 );
@@ -197,7 +202,6 @@ const AuthPage = ({ mode, users, setUsers, setCurrentUser }) => {
 
   return (
     <div style={pageWrapperStyle}>
-      {/* Applied funTitleStyle here too, with slightly less bottom margin */}
       <h1 style={{ ...funTitleStyle, marginBottom: '10px' }}>GLOBAL RANKING SYSTEM 🏆</h1>
       <h2 style={{ fontSize: '1.8rem', marginBottom: '40px', color: '#666' }}>
         {mode === 'login' ? 'Log in to continue' : 'Create an account'}
@@ -288,45 +292,133 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
   const currentStats = allStats[categoryName] || [];
   
   const [val, setVal] = useState("");
+  const [gender, setGender] = useState("Male");
+  const [region, setRegion] = useState("North America");
+  
+  const [viewMode, setViewMode] = useState("Global"); 
   const displayName = currentUser?.isAnonymous ? "Anonymous" : currentUser?.username;
 
   const addEntry = (e) => {
     e.preventDefault();
     if (!val) return;
-    const newEntry = { name: displayName, value: parseFloat(val) };
-    const updated = [...currentStats, newEntry].sort((a, b) => catInfo.better === "large" ? b.value - a.value : a.value - b.value).slice(0, 100);
+    
+    const newEntry = { name: displayName, value: parseFloat(val), gender, region };
+    const updated = [...currentStats, newEntry]; 
+    
     setAllStats(prev => ({ ...prev, [categoryName]: updated }));
     setVal(""); 
   };
 
   const getRankDisplay = (i) => i === 0 ? "1st 🥇" : i === 1 ? "2nd 🥈" : i === 2 ? "3rd 🥉" : `${i + 1}th`;
 
-  return (
-    <div style={pageWrapperStyle}>
-      <Link to={catInfo.type === 'global' ? "/global" : "/created"} style={backLinkStyle}>← Back</Link>
-      <h2 style={{ textTransform: 'capitalize', fontSize: '2rem' }}>{categoryName} Rankings ({catInfo.unit})</h2>
-      
-      <form onSubmit={addEntry} style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-        <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '120px', height: '120px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '32px', borderRadius: '15px' }} required />
-        <input style={{ ...inputStyle, width: '200px', textAlign: 'center', backgroundColor: '#f3f4f6', color: '#666', cursor: 'not-allowed' }} value={displayName} readOnly title="Change this in your Profile" />
-        <button type="submit" style={{ ...mainButtonStyle, width: 'auto', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white' }}>Add Entry</button>
-      </form>
+  const renderTable = (title, statsToRender) => {
+    const sorted = [...statsToRender]
+      .sort((a, b) => catInfo.better === "large" ? b.value - a.value : a.value - b.value)
+      .slice(0, 100);
 
-      <div style={{ width: '100%', maxWidth: '700px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
+    return (
+      <div key={title} style={{ width: '100%', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+        <h3 style={{ margin: '15px 0', fontSize: '1.4rem', color: '#8b5cf6' }}>{title} Table</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
-          <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white' }}>
-            <tr><th style={{ padding: '18px' }}>Rank</th><th>{catInfo.unit || 'Score'}</th><th>Name</th></tr>
+          <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white', zIndex: 1 }}>
+            <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.unit || 'Score'}</th><th>Name</th></tr>
           </thead>
           <tbody>
-            {Array.from({ length: 100 }, (_, i) => (
-              <tr key={i} style={{ backgroundColor: i < 3 ? '#fff9e6' : '#fff', borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px', fontWeight: i < 3 ? 'bold' : 'normal' }}>{getRankDisplay(i)}</td>
-                <td>{currentStats[i]?.value ?? "-"}</td>
-                <td style={{ fontWeight: i < 3 ? 'bold' : 'normal', fontStyle: currentStats[i]?.name === 'Anonymous' ? 'italic' : 'normal' }}>{currentStats[i]?.name ?? "-"}</td>
-              </tr>
-            ))}
+            {sorted.length === 0 ? (
+              <tr><td colSpan="3" style={{ padding: '20px', color: '#666' }}>No entries yet.</td></tr>
+            ) : (
+              sorted.map((stat, i) => (
+                <tr key={i} style={{ backgroundColor: i < 3 ? '#fff9e6' : '#fff', borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '12px', fontWeight: i < 3 ? 'bold' : 'normal' }}>{getRankDisplay(i)}</td>
+                  <td>{stat.value ?? "-"}</td>
+                  <td style={{ fontWeight: i < 3 ? 'bold' : 'normal', fontStyle: stat.name === 'Anonymous' ? 'italic' : 'normal' }}>{stat.name ?? "-"}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ ...pageWrapperStyle, justifyContent: 'flex-start', paddingTop: '80px' }}>
+      <Link to={catInfo.type === 'global' ? "/global" : "/created"} style={backLinkStyle}>← Back</Link>
+      <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>{categoryName} Rankings</h2>
+      
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', marginBottom: '40px' }}>
+        
+        {currentUser ? (
+          <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
+            
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px' }} required />
+              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.unit}</span>
+            </div>
+
+            <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+
+            <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={region} onChange={e => setRegion(e.target.value)}>
+              <option value="North America">North America</option>
+              <option value="South America">South America</option>
+              <option value="Europe">Europe</option>
+              <option value="Africa">Africa</option>
+              <option value="Asia">Asia</option>
+              <option value="Australia/Oceania">Australia/Oceania</option>
+              <option value="Antarctica">Antarctica</option>
+            </select>
+
+            <input style={{ ...inputStyle, width: '220px', textAlign: 'center', backgroundColor: '#f3f4f6', color: '#666', cursor: 'not-allowed', marginBottom: 0 }} value={displayName} readOnly title="Change this in your Profile" />
+            
+            <button type="submit" style={{ ...mainButtonStyle, width: '220px', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white' }}>Add Entry</button>
+          </form>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', width: '270px', textAlign: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
+            <p style={{ color: '#666', margin: 0 }}>You must be logged in to add your score to the leaderboard.</p>
+            <Link to="/login">
+              <button style={{ ...mainButtonStyle, width: '220px', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white', marginTop: '10px' }}>Log in to submit</button>
+            </Link>
+          </div>
+        )}
+
+        {/* VIEW MODE SELECTOR */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ margin: 0, fontSize: '1.3rem' }}>View Leaderboards</h3>
+          <select style={{ ...inputStyle, border: '2px solid #8b5cf6', fontSize: '1.2rem', width: '220px', padding: '15px' }} value={viewMode} onChange={e => setViewMode(e.target.value)}>
+            <option value="Global">🌎 Global Ranking</option>
+            <option value="Gender">🚻 By Gender</option>
+            <option value="Region">🗺️ By Region</option>
+          </select>
+          <p style={{ color: '#666', maxWidth: '200px', fontSize: '0.95rem' }}>
+            Select a filter to dynamically split the leaderboards below!
+          </p>
+        </div>
+
+      </div>
+
+      {/* DYNAMIC TABLES CONTAINER */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%', maxWidth: '1400px' }}>
+        {viewMode === 'Global' && renderTable('Global', currentStats)}
+        
+        {viewMode === 'Gender' && [
+          renderTable('Male', currentStats.filter(s => s.gender === 'Male')),
+          renderTable('Female', currentStats.filter(s => s.gender === 'Female'))
+        ]}
+        
+        {viewMode === 'Region' && [
+          renderTable('North America', currentStats.filter(s => s.region === 'North America')),
+          renderTable('South America', currentStats.filter(s => s.region === 'South America')),
+          renderTable('Europe', currentStats.filter(s => s.region === 'Europe')),
+          renderTable('Africa', currentStats.filter(s => s.region === 'Africa')),
+          renderTable('Asia', currentStats.filter(s => s.region === 'Asia')),
+          renderTable('Australia/Oceania', currentStats.filter(s => s.region === 'Australia/Oceania')),
+          renderTable('Antarctica', currentStats.filter(s => s.region === 'Antarctica'))
+        ]}
       </div>
     </div>
   );

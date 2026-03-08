@@ -1,21 +1,42 @@
+/**
+ * Filename: User.java
+ * Author: Charles Bassani
+ * Description: User DTO and model
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
 package com.charble.backend.model;
 
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
 import com.charble.backend.model.enums.*;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import org.hibernate.annotations.CreationTimestamp;
 
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
 @Entity
 @Table(name = "users")
 public class User
 {
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public User() {}
+
     public User(String username,
                 String email,
                 String passwordHash,
                 LocalDateTime birthday,
-                Integer age,
+                Integer ageMonths,
                 Region region,
                 Sex sex)
     {
@@ -23,30 +44,54 @@ public class User
         this.email = email;
         this.passwordHash = passwordHash;
         this.birthday = birthday;
-        this.age = age;
+        this.ageMonths = ageMonths;
         this.region = region;
         this.sex = sex;
     }
 
-    public User() {}
-
-    public void UpdateUser(String username,
-                String email,
-                String passwordHash,
-                LocalDateTime birthday,
-                Integer age,
-                Region region,
-                Sex sex)
+    //------------------------------------------------------------------------------------------------
+    // Public Functions
+    //------------------------------------------------------------------------------------------------
+    public void update(String username,
+                       String email,
+                       String passwordHash,
+                       LocalDateTime birthday,
+                       Integer ageMonths,
+                       Region region,
+                       Sex sex)
     {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.birthday = birthday;
-        this.age = age;
+        this.ageMonths = ageMonths;
         this.region = region;
         this.sex = sex;
     }
 
+    //Getters
+    public UUID getUserId()                { return userId; }
+    public String getUsername()            { return username; }
+    public String getEmail()               { return email; }
+    public String getPasswordHash()        { return passwordHash; }
+    public LocalDateTime getCreatedAt()    { return createdAt; }
+    public LocalDateTime getBirthday()     { return birthday; }
+    public Integer getAgeMonths()          { return (int)ChronoUnit.MONTHS.between(birthday, LocalDateTime.now()); }
+    public Integer getAgeYears()           { return (int)ChronoUnit.YEARS.between(birthday, LocalDateTime.now()); }
+    public Region getRegion()              { return region; }
+    public Sex getSex()                    { return sex; }
+
+    //Setters
+    public void setUsername(String username)            { this.username = username; }
+    public void setEmail(String email)                  { this.email = email; }
+    public void setPasswordHash(String passwordHash)    { this.passwordHash = passwordHash; }
+    public void setBirthday(LocalDateTime birthday)     { this.birthday = birthday; }
+    public void setRegion(Region region)                { this.region = region; }
+    public void setSex(Sex sex)                         { this.sex = sex; }
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id")
@@ -68,8 +113,8 @@ public class User
     @Column(name = "birthday")
     private LocalDateTime birthday;
 
-    @Column(name = "age")
-    private Integer age;
+    @Column(name = "ageMonths")
+    private Integer ageMonths;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "region")
@@ -78,18 +123,4 @@ public class User
     @Enumerated(EnumType.STRING)
     @Column(name = "sex")
     private Sex sex;
-
-    //Getters
-    public UUID userId() { return userId; }
-    public String username() { return username; }
-    public String email() { return email; }
-    public String passwordHash() { return passwordHash; }
-    public LocalDateTime createdAt() { return createdAt; }
-    public LocalDateTime birthday() { return birthday; }
-    public Integer age() { return age; }
-    public Region region() { return region; }
-    public Sex sex() { return sex; }
-}
-
-
-
+};

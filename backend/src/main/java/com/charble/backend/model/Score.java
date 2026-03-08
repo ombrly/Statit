@@ -1,25 +1,77 @@
+/**
+ * Filename: Score.java
+ * Author: Charles Bassani
+ * Description: Score DTO and model
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
 package com.charble.backend.model;
 
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
 
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
 @Entity
 @Table(name = "scores")
 public class Score
 {
-    public Score(Category category, User user, Float score, Boolean anonymous)
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public Score() {}
+
+    public Score(Category category,
+                 User user,
+                 Float score,
+                 Boolean anonymous)
     {
         this.category = category;
         this.user = user;
         this.score = score;
         this.anonymous = anonymous;
+        this.rejected = false;
     }
 
-    public Score() {}
+    //------------------------------------------------------------------------------------------------
+    // Public Functions
+    //------------------------------------------------------------------------------------------------
+    public void update(Category category,
+                       User user,
+                       Float score,
+                       Boolean anonymous,
+                       Boolean rejected)
+    {
+        this.category = category;
+        this.user = user;
+        this.score = score;
+        this.anonymous = anonymous;
+        this.rejected = rejected;
+    }
 
+    //Getters
+    public UUID getScoreId()               { return scoreId; }
+    public Category getCategory()          { return category; }
+    public User getUser()                  { return user; }
+    public float getScore()                { return score; }
+    public Boolean getAnonymous()          { return anonymous; }
+    public LocalDateTime getSubmittedAt()  { return submittedAt; }
+
+    //Setters
+    public void setRejected(Boolean rejected) { this.rejected = rejected; }
+
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "score_id")
@@ -39,18 +91,12 @@ public class Score
     @Column(name = "is_anonymous", nullable = false)
     private Boolean anonymous;
 
+    @Column(name = "rejected", nullable = false)
+    private Boolean rejected;
+
     @CreationTimestamp
     @Column(name = "submitted_at", nullable = false)
     private LocalDateTime submittedAt;
-
-    //Getters
-    public UUID scoreId() { return scoreId; }
-    public Category category() { return category; }
-    public User user() { return user; }
-    public Float score() { return score; }
-    public Boolean anonymous() { return anonymous; }
-    public LocalDateTime submittedAt() { return submittedAt; }
-}
-
+};
 
 

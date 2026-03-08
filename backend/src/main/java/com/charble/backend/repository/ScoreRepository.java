@@ -1,29 +1,39 @@
+/**
+ * Filename: ScoreRepository.java
+ * Author: Charles Bassani
+ * Description: Repository for Score table queries
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
 package com.charble.backend.repository;
 
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.charble.backend.model.Category;
 import com.charble.backend.model.Score;
 import com.charble.backend.model.User;
-import com.charble.backend.model.Category;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+//----------------------------------------------------------------------------------------------------
+// Interface Definition
+//----------------------------------------------------------------------------------------------------
 @Repository
 public interface ScoreRepository extends JpaRepository<Score, UUID>
 {
-    @Query("SELECT s FROM Score s WHERE s.user = ?1 AND s.category = ?2 ORDER BY s.score DESC LIMIT 1")
-    Optional<Score> findTopByUserAndCategoryOrderByScoreDesc(User user, Category category);
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    Optional<Score> findFirstByCategoryAndUserOrderByScoreDesc(Category category, User user);
 
-    @Query("SELECT s FROM Score s WHERE s.user = ?1 AND s.category = ?2 ORDER BY s.submittedAt DESC LIMIT 1")
-    Optional<Score> findTopByUserAndCategoryOrderBySubmittedAtDesc(User user, Category category);
-
-    @Query("SELECT COUNT(DISTINCT s.user) FROM Score s WHERE s.category = ?1")
-    long countDistinctUsersByCategory(Category category);
-
-    @Query("SELECT MAX(s.score) FROM Score s WHERE s.category = ?1 GROUP BY s.user")
-    List<Float> findHighestScoresPerUserByCategory(Category category);
+    Optional<Score> findFirstByCategoryAndUserOrderByScoreAsc(Category category, User user);
 }

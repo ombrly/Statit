@@ -15,6 +15,10 @@ public class StatisticsService {
     private static final int MIN_HISTOGRAM_BUCKETS = 5;
     private static final int MAX_HISTOGRAM_BUCKETS = 10;
 
+    /*
+     This remains a full-data recompute path. It is still needed for exact quantiles/median/IQR/histogram,
+     which are order-dependent statistics.
+     */
     public StatsSummary calculate(List<Double> rawValues, Double userValue) {
         Objects.requireNonNull(rawValues, "Values list is required.");
         if (rawValues.isEmpty()) {
@@ -31,16 +35,22 @@ public class StatisticsService {
         }
 
         int sampleSize = sortedValues.size();
-        
-        // Basic descriptive statistics
-        double mean = sortedValues.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
+
+        /*
+         Mean/std-dev now come from a single running-moments pass (Welford),
+         which is numerically stable and is the same primitive used for O(1) per-submission updates below.
+         */
+        RunningMoments moments = accumulateRunningMoments(sortedValues);
+        double mean = moments.mean();
+        double standardDeviation = moments.sampleStandardDeviation();
+
+        // Quantiles still require sorted full data (not O(1) with this simple service).
         double median = quantile(sortedValues, 0.50); 
         double q1 = quantile(sortedValues, 0.25);     
         double q3 = quantile(sortedValues, 0.75);     
         double iqr = q3 - q1;                         
         double min = sortedValues.getFirst();
         double max = sortedValues.getLast();
-        double standardDeviation = sampleStandardDeviation(sortedValues, mean);
 
         // Outlier Detection 
         // Anything much smaller than Q1 or much larger than Q3 is flagged as an outlier.
@@ -76,6 +86,46 @@ public class StatisticsService {
     }
 
     /*
+     O(1) update for mean and standard deviation when one new score arrives.
+     Use this in your score-submission path to avoid rescanning all historical scores every write.
+     */
+    public RunningMoments updateRunningMoments(RunningMoments current, double newValue) {
+        validateNumber(newValue);
+        RunningMoments safeCurrent = current == null ? new RunningMoments(0, 0.0, 0.0) : current;
+
+        long nextSampleSize = safeCurrent.sampleSize() + 1;
+        double delta = newValue - safeCurrent.mean();
+        double nextMean = safeCurrent.mean() + (delta / nextSampleSize);
+        double delta2 = newValue - nextMean;
+        double nextM2 = safeCurrent.m2() + (delta * delta2);
+
+        return new RunningMoments(nextSampleSize, nextMean, nextM2);
+    }
+
+    /*
+     Gaussian fallback: if you only have baseline mean/std-dev (and not full distribution data),
+     this estimates percentile from z-score using a normal CDF.
+     */
+    public GaussianFallbackResult gaussianFallback(double userValue, double mean, double standardDeviation) {
+        validateNumber(userValue);
+        validateNumber(mean);
+        validateNumber(standardDeviation);
+        if (standardDeviation < 0.0) {
+            throw new IllegalArgumentException("Standard deviation cannot be negative.");
+        }
+
+        if (standardDeviation == 0.0) {
+            double percentile = (Double.compare(userValue, mean) < 0) ? 0.0
+                    : (Double.compare(userValue, mean) > 0) ? 100.0 : 50.0;
+            return new GaussianFallbackResult(userValue, mean, standardDeviation, null, percentile);
+        }
+
+        double zScore = (userValue - mean) / standardDeviation;
+        double percentile = normalCdf(zScore) * 100.0;
+        return new GaussianFallbackResult(userValue, mean, standardDeviation, zScore, percentile);
+    }
+
+    /*
      Esures we don't try to do math on something that is not a number
      */
     private void validateNumber(Double value) {
@@ -84,23 +134,12 @@ public class StatisticsService {
         }
     }
 
-    /*
-     Calculates Standard Deviation 
-     */
-    private double sampleStandardDeviation(List<Double> sortedValues, double mean) {
-        int sampleSize = sortedValues.size();
-        if (sampleSize < 2) {
-            return 0.0;
+    private RunningMoments accumulateRunningMoments(List<Double> values) {
+        RunningMoments current = new RunningMoments(0, 0.0, 0.0);
+        for (double value : values) {
+            current = updateRunningMoments(current, value);
         }
-
-        double squaredErrorSum = sortedValues.stream()
-                .mapToDouble(value -> {
-                    double delta = value - mean;
-                    return delta * delta; 
-                })
-                .sum();
-
-        return Math.sqrt(squaredErrorSum / (sampleSize - 1));
+        return current;
     }
 
     /*
@@ -184,5 +223,51 @@ public class StatisticsService {
         }
 
         return buckets;
+    }
+
+    private double normalCdf(double z) {
+        return 0.5 * (1.0 + erf(z / Math.sqrt(2.0)));
+    }
+
+    // Abramowitz and Stegun approximation for the error function.
+    private double erf(double value) {
+        double sign = value < 0 ? -1.0 : 1.0;
+        double x = Math.abs(value);
+
+        double a1 = 0.254829592;
+        double a2 = -0.284496736;
+        double a3 = 1.421413741;
+        double a4 = -1.453152027;
+        double a5 = 1.061405429;
+        double p = 0.3275911;
+
+        double t = 1.0 / (1.0 + p * x);
+        double y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+        return sign * y;
+    }
+
+    /*
+     Running moments for incremental updates:
+     - sampleSize: n
+     - mean: running mean
+     - m2: running sum of squared deviations from the mean
+     */
+    public record RunningMoments(long sampleSize, double mean, double m2) {
+        public double sampleVariance() {
+            return sampleSize < 2 ? 0.0 : m2 / (sampleSize - 1);
+        }
+
+        public double sampleStandardDeviation() {
+            return Math.sqrt(sampleVariance());
+        }
+    }
+
+    public record GaussianFallbackResult(
+            double userValue,
+            double mean,
+            double standardDeviation,
+            Double zScore,
+            double percentile
+    ) {
     }
 }
