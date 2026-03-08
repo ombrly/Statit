@@ -13,6 +13,8 @@ package com.charble.backend.model;
 // Imports
 //----------------------------------------------------------------------------------------------------
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -37,7 +39,7 @@ public class User
     public User(String username,
                 String email,
                 String passwordHash,
-                LocalDateTime birthday,
+                LocalDate birthday,
                 Map<String, String> demographics)
     {
         this.username = username;
@@ -53,7 +55,7 @@ public class User
     public void update(String username,
                        String email,
                        String passwordHash,
-                       LocalDateTime birthday,
+                       LocalDate birthday,
                        Map<String, String> demographics)
     {
         this.username = username;
@@ -81,14 +83,14 @@ public class User
     public String getEmail()                     { return email; }
     public String getPasswordHash()              { return passwordHash; }
     public LocalDateTime getCreatedAt()          { return createdAt; }
-    public LocalDateTime getBirthday()           { return birthday; }
+    public LocalDate getBirthday()               { return birthday; }
     public Map<String, String> getDemographics() { return demographics; }
 
     //Setters
     public void setUsername(String username)                        { this.username = username; }
     public void setEmail(String email)                              { this.email = email; }
     public void setPasswordHash(String passwordHash)                { this.passwordHash = passwordHash; }
-    public void setBirthday(LocalDateTime birthday)                 { this.birthday = birthday; }
+    public void setBirthday(LocalDate birthday)                     { this.birthday = birthday; }
     public void setDemographics(Map<String, String> demographics)   { this.demographics = demographics; }
 
     //------------------------------------------------------------------------------------------------
@@ -105,7 +107,7 @@ public class User
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @CreationTimestamp
@@ -113,7 +115,7 @@ public class User
     private LocalDateTime createdAt;
 
     @Column(name = "birthday")
-    private LocalDateTime birthday;
+    private LocalDate birthday;
 
     // This is the Postgres JSONB magic
     @JdbcTypeCode(SqlTypes.JSON)

@@ -69,7 +69,7 @@ public class Score
     public UUID getScoreId()               { return scoreId; }
     public Category getCategory()          { return category; }
     public User getUser()                  { return user; }
-    public float getScore()                { return score; }
+    public Float getScore()                { return score; }
     public Map<String, String> getTags()   { return tags; }
     public Boolean getAnonymous()          { return anonymous; }
     public LocalDateTime getSubmittedAt()  { return submittedAt; }

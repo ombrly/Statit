@@ -18,6 +18,8 @@ import com.charble.backend.model.User;
 import com.charble.backend.repository.CategoryRepository;
 import com.charble.backend.repository.GlobalBaselineRepository;
 import com.charble.backend.repository.ScoreRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,13 +51,13 @@ public class CategoryService
     @Transactional
     public Category createCategory(String name,
                                    String description,
-                                   List<String> tags,
                                    String units,
+                                   List<String> tags,
                                    Boolean sortOrder,
                                    User foundingUser)
     {
         //Check if category exists already
-        if(categoryRepository.findByName(name).isPresent())
+        if(categoryRepository.findByCategoryName(name).isPresent())
         {
             throw new IllegalArgumentException("Category already exists.");
         }
@@ -64,8 +66,8 @@ public class CategoryService
         Category category = new Category(
                 name,
                 description,
-                tags,
                 units,
+                tags,
                 sortOrder,
                 foundingUser
         );
@@ -77,6 +79,32 @@ public class CategoryService
         generateAndSaveGlobalBaseline(category);
 
         return category;
+    }
+
+    @Transactional
+    public Category updateCategory(UUID categoryId,
+                                   String name,
+                                   String description,
+                                   List<String> tags,
+                                   String units,
+                                   Boolean sortOrder)
+    {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+        category.update(name, description, units, tags, sortOrder);
+        return categoryRepository.save(category);
+    }
+
+    public Category getCategory(UUID categoryId)
+    {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+    }
+
+    public Page<Category> getAllCategories(Pageable pageable)
+    {
+        return categoryRepository.findAllByOrderByCategoryNameAsc(pageable);
     }
 
     @Transactional

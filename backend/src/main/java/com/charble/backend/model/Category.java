@@ -35,15 +35,15 @@ public class Category
 
     public Category(String categoryName,
                     String description,
-                    List<String> tags,
                     String units,
+                    List<String> tags,
                     Boolean sortOrder,
                     User foundingUser)
     {
         this.categoryName = categoryName;
         this.description = description;
-        this.tags = tags != null ? tags : new ArrayList<>();
         this.units = units;
+        addTags(tags);
         this.sortOrder = sortOrder;
         this.foundingUser = foundingUser;
     }
@@ -53,14 +53,14 @@ public class Category
     //------------------------------------------------------------------------------------------------
     public void update(String categoryName,
                        String description,
-                       List<String> tags,
                        String units,
+                       List<String> tags,
                        Boolean sortOrder)
     {
         this.categoryName = categoryName;
         this.description = description;
-        this.tags = tags != null ? tags : new ArrayList<>();
         this.units = units;
+        addTags(tags);
         this.sortOrder = sortOrder;
     }
 
@@ -69,6 +69,12 @@ public class Category
         if(tags.contains(tag.toLowerCase())) return;
         else tags.add(tag.toLowerCase());
     }
+
+    public void addTags(List<String> tags)
+    {
+        for(String tag : tags) addTag(tag);
+    }
+
 
     public void removeTag(String tag)
     {
