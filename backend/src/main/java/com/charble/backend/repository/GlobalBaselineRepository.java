@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 //----------------------------------------------------------------------------------------------------
@@ -32,6 +31,8 @@ public interface GlobalBaselineRepository extends JpaRepository<GlobalBaseline, 
     // Single Baseline Lookups
     //------------------------------------------------------------------------------------------------
     Optional<GlobalBaseline> findByCategory(Category category);
+
+    List<GlobalBaseline> findAllByCategory(Category category);
 
     //------------------------------------------------------------------------------------------------
     // Bulk Deletes

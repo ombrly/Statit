@@ -43,6 +43,8 @@ public interface ScoreRepository extends JpaRepository<Score, UUID>
     //------------------------------------------------------------------------------------------------
     // User History and Counts
     //------------------------------------------------------------------------------------------------
+    List<Score> findAllByUser(User user);
+
     Page<Score> findByUserOrderBySubmittedAtDesc(User user, Pageable pageable);
 
     long countByCategoryAndRejectedFalse(Category category);

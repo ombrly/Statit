@@ -19,7 +19,7 @@ import com.charble.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +52,7 @@ public class UserService
     public User createUser(String username,
                            String email,
                            String passwordHash,
-                           LocalDateTime birthday,
+                           LocalDate birthday,
                            Map<String, String> demographics)
     {
         //Check if username exists already
@@ -88,7 +88,7 @@ public class UserService
                            String username,
                            String email,
                            String passwordHash,
-                           LocalDateTime birthday,
+                           LocalDate birthday,
                            Map<String, String> demographics)
     {
         //Fetch existing user
