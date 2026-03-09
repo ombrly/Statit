@@ -14,6 +14,7 @@ package com.charble.backend.controller;
 //----------------------------------------------------------------------------------------------------
 import com.charble.backend.dto.BaselineStatsResponse;
 import com.charble.backend.dto.LeaderboardResponse;
+import com.charble.backend.dto.LeaderboardSnapshotResponse;
 import com.charble.backend.dto.ScoreFilterRequest;
 import com.charble.backend.model.Category;
 import com.charble.backend.model.GlobalBaseline;
@@ -66,6 +67,31 @@ public class LeaderboardController
         Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
 
         LeaderboardResponse response = LeaderboardResponse.fromPage(category, scores);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{categoryId}/snapshot")
+    public ResponseEntity<LeaderboardSnapshotResponse> getLeaderboardSnapshot(@PathVariable UUID categoryId,
+                                                                              @RequestParam(defaultValue = "0") int page,
+                                                                              @RequestParam(defaultValue = "25") int size)
+    {
+        Category category = categoryService.getCategory(categoryId);
+        Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
+        LeaderboardResponse leaderboardResponse = LeaderboardResponse.fromPage(category, scores);
+
+        List<GlobalBaseline> baselines = baselineManagementService.getBaselinesByCategory(categoryId);
+        List<BaselineStatsResponse> baselineResponses = new ArrayList<>();
+        for(GlobalBaseline baseline : baselines)
+        {
+            baselineResponses.add(BaselineStatsResponse.fromBaseline(baseline));
+        }
+
+        LeaderboardSnapshotResponse response = new LeaderboardSnapshotResponse(
+                categoryId,
+                leaderboardResponse,
+                baselineResponses
+        );
+
         return ResponseEntity.ok(response);
     }
 
