@@ -1,12 +1,21 @@
-# Use a lightweight Java 17 image (update the version if you are using Java 21, etc.)
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:25-jdk-alpine
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy your compiled Java application into the container
-# (Adjust "target/ranking-system.jar" to match your actual build output path)
-COPY target/ranking-system.jar app.jar
+# Copy Gradle files first for dependency caching
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Copy source code
+COPY src src
+
+# Build the application
+RUN ./gradlew bootJar -x test
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "build/libs/backend-0.0.1-SNAPSHOT.jar"]

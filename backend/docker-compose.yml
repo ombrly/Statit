@@ -1,46 +1,35 @@
 version: '3.8'
 
 services:
-  # 1. The PostgreSQL Database
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: ranking_admin
-      POSTGRES_PASSWORD: supersecretpassword
-      POSTGRES_DB: global_ranking
+      POSTGRES_USER: statit_admin
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: statit_db
     ports:
       - "5432:5432"
     volumes:
-      # This maps the database data to a persistent volume
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      # This checks if the DB is actually ready to accept connections
-      test: ["CMD-SHELL", "pg_isready -U ranking_admin -d global_ranking"]
+      test: ["CMD-SHELL", "pg_isready -U statit_admin -d statit_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # 2. Your Java Application
   app:
     build: .
     ports:
       - "8080:8080"
     environment:
-      # Database connection
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/global_ranking
-      - SPRING_DATASOURCE_USERNAME=ranking_admin
-      - SPRING_DATASOURCE_PASSWORD=supersecretpassword
-
-      # 1. Tells Hibernate to create/update the tables based on your @Entity classes
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=create
-
-      # 2. Prints the actual "CREATE TABLE" SQL statements in your console!
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/statit_db
+      - SPRING_DATASOURCE_USERNAME=statit_admin
+      - SPRING_DATASOURCE_PASSWORD=testpassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_JPA_SHOW_SQL=true
     depends_on:
       db:
-        # This forces the app to wait until the DB is fully booted before starting
         condition: service_healthy
 
-# Declare the volume at the bottom of the file
 volumes:
   postgres_data:
