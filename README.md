@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Statit
 
 A platform for submitting, ranking, and analyzing personal metrics across user-defined categories with real-time statistical processing. 
@@ -69,6 +68,7 @@ com.statit.backend
 - Charles Bassani
 - Wilson Jimenez
 - Kenneth Chan
+
 - Derek Ly
 =======
 # Global Ranking System
