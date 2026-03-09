@@ -15,13 +15,13 @@ package com.charble.backend.controller;
 
 import com.charble.backend.dto.UserResponse;
 import com.charble.backend.model.User;
+import com.charble.backend.repository.UserRepository;
 import com.charble.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Map;
-import java.util.UUID;
 
 //----------------------------------------------------------------------------------------------------
 // Class Definition
@@ -33,9 +33,11 @@ public class UserController
     //------------------------------------------------------------------------------------------------
     // Constructors
     //------------------------------------------------------------------------------------------------
-    public UserController(UserService userService)
+    public UserController(UserService userService,
+                          UserRepository userRepository)
     {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -58,10 +60,11 @@ public class UserController
         return ResponseEntity.ok(userResponse);
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable UUID userId)
+    @GetMapping("/{username}")
+    public ResponseEntity<UserResponse> getUser(@PathVariable String username)
     {
-        User user = userService.getUser(userId);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         UserResponse response = UserResponse.fromUser(user, null);
         return ResponseEntity.ok(response);
@@ -71,4 +74,5 @@ public class UserController
     // Private Variables
     //------------------------------------------------------------------------------------------------
     private final UserService userService;
+    private final UserRepository userRepository;
 }

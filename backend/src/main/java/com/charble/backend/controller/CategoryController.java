@@ -17,8 +17,8 @@ import com.charble.backend.dto.CategoryListResponse;
 import com.charble.backend.dto.CategoryResponse;
 import com.charble.backend.model.Category;
 import com.charble.backend.model.User;
+import com.charble.backend.repository.UserRepository;
 import com.charble.backend.service.CategoryService;
-import com.charble.backend.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,10 +44,10 @@ public class CategoryController
     // Constructors
     //------------------------------------------------------------------------------------------------
     public CategoryController(CategoryService categoryService,
-                              UserService userService)
+                              UserRepository userRepository)
     {
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -56,7 +56,8 @@ public class CategoryController
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(@RequestBody CategoryCreateRequest request)
     {
-        User foundingUser = userService.getUser(request.foundingUserId());
+        User foundingUser = userRepository.findByUsername(request.foundingUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
         List<String> tags = request.tags() != null ? request.tags() : new ArrayList<>();
 
         Category category = categoryService.createCategory(
@@ -99,5 +100,5 @@ public class CategoryController
     // Private Variables
     //------------------------------------------------------------------------------------------------
     private final CategoryService categoryService;
-    private final UserService userService;
+    private final UserRepository userRepository;
 }

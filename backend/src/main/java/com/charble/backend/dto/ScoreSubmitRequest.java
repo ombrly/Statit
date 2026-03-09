@@ -15,13 +15,12 @@ package com.charble.backend.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
-import java.util.UUID;
 
 //----------------------------------------------------------------------------------------------------
 // Record Definition
 //----------------------------------------------------------------------------------------------------
-public record ScoreSubmitRequest(@JsonProperty("user_id") UUID userId,
-                                 @JsonProperty("category_id") UUID categoryId,
+public record ScoreSubmitRequest(String username,
+                                 @JsonProperty("category_name") String categoryName,
                                  Float score,
                                  Map<String, String> tags,
                                  Boolean anonymous)
