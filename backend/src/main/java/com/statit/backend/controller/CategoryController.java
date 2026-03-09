@@ -56,7 +56,7 @@ public class CategoryController
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(@RequestBody CategoryCreateRequest request)
     {
-        User foundingUser = userService.getUser(request.foundingUserId());
+        User foundingUser = userService.getUser(request.foundingUsername());
         List<String> tags = request.tags() != null ? request.tags() : new ArrayList<>();
 
         Category category = categoryService.createCategory(

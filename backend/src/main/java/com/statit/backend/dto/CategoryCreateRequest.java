@@ -25,6 +25,6 @@ public record CategoryCreateRequest(String name,
                                     String units,
                                     List<String> tags,
                                     @JsonProperty("sort_order") Boolean sortOrder,
-                                    @JsonProperty("founding_user_id") UUID foundingUserId)
+                                    @JsonProperty("founding_username") String foundingUsername)
 {
 }
