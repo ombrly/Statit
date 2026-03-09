@@ -7,7 +7,7 @@ const getStorage = (key, defaultValue) => {
   return saved ? JSON.parse(saved) : defaultValue;
 };
 
-// --- SHARED STYLES ---
+// page style
 const pageWrapperStyle = {
   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
   minHeight: '100vh', width: '100vw', fontFamily: 'sans-serif', padding: '20px',
