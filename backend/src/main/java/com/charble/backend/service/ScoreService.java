@@ -76,7 +76,7 @@ public class ScoreService
         finalTags.put("age_years", String.valueOf(user.getAgeYears()));
 
         //Save the new score
-        Score newScore = new Score(category, user, scoreValue, finalTags, isAnonymous);
+        Score newScore = new Score(category, user, scoreValue, finalTags, Boolean.TRUE.equals(isAnonymous));
         scoreRepository.save(newScore);
         scoreRepository.flush();
 
