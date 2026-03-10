@@ -8,3 +8,7 @@
 - `@PostMapping("<mapping>")` annotation tells Spring that the annotated function handles post requests from the network at the specified mapping
 - `@GetMapping("<mapping>")` annotation tells Spring that the annotated function handles get requests from the network at the specified mapping
 - Jackson looks for `is` or `get` prefixes to serialize model fields for `GET` requests
+
+# Roadblocks
+
+- Local PostgreSQL service conflict: had to run `sudo systemctl stop postgresql` before `docker compose up -d db` to avoid password/authentication issues when connecting to the Docker database.
