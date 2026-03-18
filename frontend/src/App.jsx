@@ -133,7 +133,7 @@ const AppContent = ({ categories, setCategories, allStats, setAllStats, users, s
 // --- HOME PAGE ---
 const Home = () => (
   <div style={pageWrapperStyle}>
-    <h1 style={funTitleStyle}>WELCOME TO GLOBAL RANKING SYSTEM! 🏆</h1>
+    <h1 style={funTitleStyle}>WELCOME TO STAT-IT! 🏆</h1>
     
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
       <Link to="/global"><button style={mainButtonStyle}>Global Category</button></Link>
