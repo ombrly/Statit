@@ -5,10 +5,10 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: statit_admin
-      POSTGRES_PASSWORD: testpassword
+      POSTGRES_PASSWORD: freshpassword123
       POSTGRES_DB: statit_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,9 +22,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/statit_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5433/statit_db
       - SPRING_DATASOURCE_USERNAME=statit_admin
-      - SPRING_DATASOURCE_PASSWORD=testpassword
+      - SPRING_DATASOURCE_PASSWORD=freshpassword123
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_JPA_SHOW_SQL=true
     depends_on:
