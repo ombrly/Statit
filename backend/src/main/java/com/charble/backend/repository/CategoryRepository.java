@@ -14,9 +14,10 @@ package com.charble.backend.repository;
 //----------------------------------------------------------------------------------------------------
 import com.charble.backend.model.Category;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -28,11 +29,12 @@ import org.springframework.stereotype.Repository;
 public interface CategoryRepository extends JpaRepository<Category, UUID>
 {
     //------------------------------------------------------------------------------------------------
-    // Public Methods
+    // Single Category Lookups
     //------------------------------------------------------------------------------------------------
-    @Query("SELECT c FROM Category c WHERE c.categoryName = ?1")
-    Optional<Category> findByName(String name);
+    Optional<Category> findByCategoryName(String categoryName);
 
-    @Query("SELECT c FROM Category c ORDER BY c.categoryName ASC")
-    List<Category> findAllByAlphabetical();
+    //------------------------------------------------------------------------------------------------
+    // Paginated Category Queries
+    //------------------------------------------------------------------------------------------------
+    Page<Category> findAllByOrderByCategoryNameAsc(Pageable pageable);
 }

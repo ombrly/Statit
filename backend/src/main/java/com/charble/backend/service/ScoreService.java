@@ -20,11 +20,17 @@ import com.charble.backend.repository.CategoryRepository;
 import com.charble.backend.repository.GlobalBaselineRepository;
 import com.charble.backend.repository.ScoreRepository;
 import com.charble.backend.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 //----------------------------------------------------------------------------------------------------
 // Class Definition
@@ -44,13 +50,14 @@ public class ScoreService
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.globalBaselineRepository = globalBaselineRepository;
+        this.objectMapper = new ObjectMapper();
     }
 
     //------------------------------------------------------------------------------------------------
     // Public Methods
     //------------------------------------------------------------------------------------------------
     @Transactional
-    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Boolean isAnonymous) {
+    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Map<String, String> scoreTags, Boolean isAnonymous) {
 
         //Fetch the user and category
         User user = userRepository.findById(userId)
@@ -60,8 +67,16 @@ public class ScoreService
 
         Score previousTopScore = getTopScoreForUser(category, user).orElse(null);
 
+
+        //JSONB tags merge
+        Map<String, String> finalTags = new HashMap<>();
+        if (scoreTags != null) finalTags.putAll(scoreTags);
+        if (user.getDemographics() != null) finalTags.putAll(user.getDemographics());
+        finalTags.put("age_months", String.valueOf(user.getAgeMonths()));
+        finalTags.put("age_years", String.valueOf(user.getAgeYears()));
+
         //Save the new score
-        Score newScore = new Score(category, user, scoreValue, isAnonymous);
+        Score newScore = new Score(category, user, scoreValue, finalTags, Boolean.TRUE.equals(isAnonymous));
         scoreRepository.save(newScore);
         scoreRepository.flush();
 
@@ -121,6 +136,48 @@ public class ScoreService
         }
     }
 
+    public Page<Score> getGlobalTopScores(UUID categoryId, int page, int size)
+    {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        if(category.getSortOrder())
+        {
+            return scoreRepository.findTopScoresPerUserDesc(categoryId, pageable);
+        }
+        else
+        {
+            return scoreRepository.findTopScoresPerUserAsc(categoryId, pageable);
+        }
+    }
+
+    public Page<Score> getFilteredTopScores(UUID categoryId, Map<String, String> tags, int page, int size)
+    {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+        // Serialize the filter tags to JSON for Postgres JSONB @> operator
+        String tagsJson = serializeTagsToJson(tags);
+
+        Sort sort = category.getSortOrder()
+                ? Sort.by(Sort.Direction.DESC, "score_value")
+                : Sort.by(Sort.Direction.ASC, "score_value");
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        if(category.getSortOrder())
+        {
+            return scoreRepository.findFilteredTopScoresPerUserDesc(categoryId, tagsJson, pageable);
+        }
+        else
+        {
+            return scoreRepository.findFilteredTopScoresPerUserAsc(categoryId, tagsJson, pageable);
+        }
+    }
+
+
     //------------------------------------------------------------------------------------------------
     // Private Methods
     //------------------------------------------------------------------------------------------------
@@ -134,7 +191,7 @@ public class ScoreService
         if(oldN == null) oldN = 0;
 
         //Fail if removing and no entries
-        if(oldN == 0 && removal == true) return;
+        if(oldN == 0 && removal) return;
 
         Float oldMean = baseline.getMean();
         if(oldMean == null) oldMean = 0.0f;
@@ -215,7 +272,6 @@ public class ScoreService
         baseline.setStandardDeviation(newStdDev);
         baseline.setSampleSize(newN);
 
-
         //Save record
         globalBaselineRepository.save(baseline);
     }
@@ -232,6 +288,19 @@ public class ScoreService
         }
     }
 
+    private String serializeTagsToJson(Map<String, String> tags)
+    {
+        if(tags == null || tags.isEmpty()) return "{}";
+        try
+        {
+            return objectMapper.writeValueAsString(tags);
+        }
+        catch(JsonProcessingException e)
+        {
+            throw new IllegalArgumentException("Failed to serialize tags to JSON.", e);
+        }
+    }
+
     //------------------------------------------------------------------------------------------------
     // Private Variables
     //------------------------------------------------------------------------------------------------
@@ -239,4 +308,5 @@ public class ScoreService
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final GlobalBaselineRepository globalBaselineRepository;
+    private final ObjectMapper objectMapper;
 }
