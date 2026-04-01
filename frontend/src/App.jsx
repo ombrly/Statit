@@ -82,12 +82,10 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [currentUser, setCurrentUser] = useState(() => getStorage('currentUser', null));
 
-  // Keep current user logged in across refreshes
   useEffect(() => {
     sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
   }, [currentUser]);
 
-  // Fetch all categories on initial load
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -167,10 +165,6 @@ const Home = () => (
 
 // --- PROFILE PAGE ---
 const ProfilePage = ({ currentUser, setCurrentUser }) => {
-  const toggleAnonymous = () => {
-    setCurrentUser({ ...currentUser, isAnonymous: !currentUser.isAnonymous });
-  };
-
   return (
     <div style={pageWrapperStyle}>
       <Link to="/" style={backLinkStyle}>← Back to Main</Link>
@@ -178,13 +172,6 @@ const ProfilePage = ({ currentUser, setCurrentUser }) => {
       <div style={{ backgroundColor: '#fff', padding: '40px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', minWidth: '350px' }}>
         <p style={{ fontSize: '1.4rem', margin: 0 }}><strong>Username:</strong> {currentUser.username}</p>
         <p style={{ fontSize: '1rem', margin: 0, color: '#666' }}><strong>Email:</strong> {currentUser.email}</p>
-        <div style={{ borderTop: '1px solid #eee', width: '100%', margin: '10px 0' }}></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Anonymous Mode:</span>
-          <button onClick={toggleAnonymous} style={{ ...smallButtonStyle, backgroundColor: currentUser.isAnonymous ? '#8b5cf6' : '#fff', color: currentUser.isAnonymous ? '#fff' : '#333', width: '80px' }}>
-            {currentUser.isAnonymous ? 'ON' : 'OFF'}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -324,10 +311,11 @@ const RankingPage = ({ categories, currentUser }) => {
   
   const [globalScores, setGlobalScores] = useState([]);
   const [val, setVal] = useState("");
-  const [gender, setGender] = useState("Male");
+  const [gender, setGender] = useState("Non-binary");
   const [region, setRegion] = useState("North America");
   
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isAnonForm, setIsAnonForm] = useState(false);
 
   const fetchLeaderboard = async () => {
     if (!categoryId || categoryId === 'undefined') return; 
@@ -344,15 +332,13 @@ const RankingPage = ({ categories, currentUser }) => {
           parsedTags = s.tags;
         }
 
-        console.log("Raw score data from backend:", s);
-
         const isAnon = s.anonymous === true || s.isAnonymous === true || s.is_anonymous === true || String(s.anonymous) === 'true';
         const actualUsername = s.username || s.userName || s.user_name || s.user?.username || s.user?.userName || "Unknown";
 
         return {
           userId: s.userId || s.user_id || s.user?.id || s.user?.userId || s.user?.user_id,
           name: isAnon ? "Anonymous" : actualUsername,
-          value: s.score || s.score_value || s.scoreValue,
+          value: s.score ?? s.score_value ?? s.scoreValue, // Fixed: Used ?? instead of || to allow 0
           gender: parsedTags.Gender,
           region: parsedTags.Region
         };
@@ -381,10 +367,11 @@ const RankingPage = ({ categories, currentUser }) => {
 
     const userId = currentUser?.id || currentUser?.userId || currentUser?.user_id;
 
-    if (!val || !userId) return alert("Error: User ID missing. Please log out and back in.");
+    if (val === "") return alert("Please enter a score.");
+    if (!userId) return alert("Error: User ID missing. Please log out and back in.");
     if (!categoryId || categoryId === 'undefined') return alert("Error: Invalid Category ID. Please go back to the Global Categories page and click the category again.");
     
-    const userIsAnon = currentUser.isAnonymous || false;
+    const userIsAnon = isAnonForm;
 
     try {
       await submitScore({
@@ -406,6 +393,7 @@ const RankingPage = ({ categories, currentUser }) => {
 
   const genderScores = globalScores.filter(s => s.gender === gender);
   const regionScores = globalScores.filter(s => s.region === region);
+  const intersectionScores = globalScores.filter(s => s.gender === gender && s.region === region);
 
   const renderTable = (title, statsToRender) => (
     <div key={title} style={{ width: '100%', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
@@ -418,17 +406,26 @@ const RankingPage = ({ categories, currentUser }) => {
           {statsToRender.length === 0 ? (
             <tr><td colSpan="3" style={{ padding: '20px', color: '#666' }}>No entries yet.</td></tr>
           ) : (
-            statsToRender.map((stat, i) => (
-              <tr key={i} style={{ backgroundColor: i < 3 ? '#fff9e6' : '#fff', borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px', fontWeight: i < 3 ? 'bold' : 'normal', fontSize: i < 3 ? '1.5rem' : '1rem' }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                </td>
-                <td>{stat.value ?? "-"}</td>
-                <td style={{ fontWeight: i < 3 ? 'bold' : 'normal', fontStyle: stat.name === 'Anonymous' ? 'italic' : 'normal', color: stat.name === 'Anonymous' ? '#888' : '#000' }}>
-                  {stat.name ?? "-"}
-                </td>
-              </tr>
-            ))
+            statsToRender.map((stat, i) => {
+              const actualRank = statsToRender.findIndex(s => s.value === stat.value) + 1;
+              
+              let rankDisplay = actualRank;
+              if (actualRank === 1) rankDisplay = '🥇';
+              else if (actualRank === 2) rankDisplay = '🥈';
+              else if (actualRank === 3) rankDisplay = '🥉';
+
+              return (
+                <tr key={i} style={{ backgroundColor: actualRank <= 3 ? '#fff9e6' : '#fff', borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '12px', fontWeight: actualRank <= 3 ? 'bold' : 'normal', fontSize: actualRank <= 3 ? '1.5rem' : '1rem' }}>
+                    {rankDisplay}
+                  </td>
+                  <td style={{ fontWeight: actualRank <= 3 ? 'bold' : 'normal' }}>{stat.value ?? "-"}</td>
+                  <td style={{ fontWeight: actualRank <= 3 ? 'bold' : 'normal', fontStyle: stat.name === 'Anonymous' ? 'italic' : 'normal', color: stat.name === 'Anonymous' ? '#888' : '#000' }}>
+                    {stat.name ?? "-"}
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
@@ -449,6 +446,7 @@ const RankingPage = ({ categories, currentUser }) => {
               <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units || catInfo.units_of_measurement}</span>
             </div>
             <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
+              <option value="Non-binary">Non-binary</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -461,6 +459,12 @@ const RankingPage = ({ categories, currentUser }) => {
               <option value="Australia/Oceania">Australia/Oceania</option>
               <option value="Antarctica">Antarctica</option>
             </select>
+            
+            <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '1rem', marginBottom: '5px'}}>
+              <input type="checkbox" checked={isAnonForm} onChange={e => setIsAnonForm(e.target.checked)} disabled={hasSubmitted} />
+              Submit Anonymously
+            </label>
+
             <button 
               type="submit" 
               disabled={hasSubmitted}
@@ -485,6 +489,7 @@ const RankingPage = ({ categories, currentUser }) => {
         {renderTable('Global Top', globalScores)}
         {renderTable(`${gender} Top`, genderScores)}
         {renderTable(`${region} Top`, regionScores)}
+        {renderTable(`${gender} in ${region} Top`, intersectionScores)}
       </div>
     </div>
   );
