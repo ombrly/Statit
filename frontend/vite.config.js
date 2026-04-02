@@ -10,5 +10,11 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    outDir: 'dist'
+  },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify('')
   }
 })

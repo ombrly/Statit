@@ -1,3 +1,21 @@
+// Compile and run steps:
+// In backend:
+// docker rm -f backend-db-1 db
+// docker compose up -d
+// if nothing works, then sudo systemctl stop postgresql --> docker-compose up -d --build
+// Frontend: 
+// npm install
+// npm run dev
+
+/*
+Run on backend: 
+az containerapp update --name statit-frontend --resource-group STATITgroup --min-replicas 0 --max-replicas 0
+az containerapp update --name statit-backend --resource-group STATITgroup --min-replicas 0 --max-replicas 0
+az containerapp update --name statit-db --resource-group STATITgroup --min-replicas 0 --max-replicas 0
+
+
+*/
+
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
