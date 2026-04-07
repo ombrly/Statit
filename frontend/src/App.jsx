@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = 'http://statit-backend-api.eastus.azurecontainer.io:8080/api/v1';
 
-const createUser = async (userData) => {
-  const response = await fetch(`${API_BASE_URL}/users`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(userData),
-  });
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(errText);
-  }
-  return response.json();
+// --- HELPERS ---
+const getStorage = (key, defaultValue) => {
+  const saved = localStorage.getItem(key);
+  return saved ? JSON.parse(saved) : defaultValue;
 };
 
 const getUserByUsername = async (username) => {
@@ -76,36 +69,36 @@ const smallButtonStyle = { padding: '10px 18px', cursor: 'pointer', borderRadius
 const funTitleStyle = { fontSize: '3.2rem', marginBottom: '40px', color: '#2c3e50', fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", cursive' };
 
 export default function App() {
-  const [categories, setCategories] = useState([]);
-  const [currentUser, setCurrentUser] = useState(() => getStorage('currentUser', null));
+  const defaultPresets = [
+    { name: "Wealth", better: "large", unit: "$", type: "global" },
+    { name: "Health", better: "large", unit: "pts", type: "global" },
+    { name: "Speed", better: "small", unit: "sec", type: "global" }
+  ];
+  const [categories, setCategories] = useState(getStorage("categories", defaultPresets));
+  const [allStats, setAllStats] = useState(getStorage("allStats", {}));
+  const [users, setUsers] = useState(getStorage("users", []));
+  const [currentUser, setCurrentUser] = useState(getStorage("currentUser", null));
+  
+  const handleLogin = async (username, password) => {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST', // We are sending data
+      headers: {
+        'Content-Type': 'application/json', // Telling the backend we are sending JSON
+      },
+      body: JSON.stringify({ username, password }) // The actual data
+    });
 
-  useEffect(() => {
-    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-  }, [currentUser]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getAllCategories();
-        const categoryList = data.categories || data.content || data; 
-        setCategories(categoryList);
-      } catch (err) {
-        console.error("Failed to load categories:", err);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  return (
-    <Router>
-      <AppContent 
-        categories={categories} 
-        setCategories={setCategories}
-        currentUser={currentUser} 
-        setCurrentUser={setCurrentUser}
-      />
-    </Router>
-  );
+    if (response.ok) {
+      const userData = await response.json();
+      setCurrentUser(userData); // Log the user in on the frontend
+    } else {
+      alert("Invalid credentials!");
+    }
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
 }
 
 const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) => {
