@@ -1,4 +1,4 @@
-// Compile and run steps:
+// Compile and run steps (locally):
 // In backend:
 // docker rm -f backend-db-1 db
 // docker compose up -d
@@ -7,18 +7,49 @@
 // npm install
 // npm run dev
 
-/*
-Run on backend: 
-az containerapp update --name statit-frontend --resource-group STATITgroup --min-replicas 0 --max-replicas 0
-az containerapp update --name statit-backend --resource-group STATITgroup --min-replicas 0 --max-replicas 0
-az containerapp update --name statit-db --resource-group STATITgroup --min-replicas 0 --max-replicas 0
+//cd ~/Global-Ranking-System/backend
+//docker-compose up -d --build 
+//Above runs dbeaver
 
+/*
+Below is to get azure connected to the neon database. Only needs to be done once:
+az containerapp update \
+  --name statit-backend \
+  --resource-group STATITgroup \
+  --set-env-vars SPRING_DATASOURCE_URL="jdbc:postgresql://ep-wandering-cherry-a8balq59.eastus2.azure.neon.tech/neondb?sslmode=require" SPRING_DATASOURCE_USERNAME="neondb_owner" SPRING_DATASOURCE_PASSWORD="npg_rqW1pGoDZ4JR"
+
+
+For frontend, if new code is added, go to frontend directory and run:
+
+cd ~/Global-Ranking-System/frontend
+docker build --no-cache -t ca93d2246cc8acr.azurecr.io/statit-frontend:v7 .
+az acr login --name ca93d2246cc8acr
+docker push ca93d2246cc8acr.azurecr.io/statit-frontend:v7
+az containerapp update --name statit-frontend --resource-group STATITgroup --image ca93d2246cc8acr.azurecr.io/statit-frontend:v7
+
+(Just increase the version number each time you do this to avoid caching issues)
+
+Run on backend: 
+
+# Turn on (order doesn't matter anymore since DB is in Neon)
+az containerapp update --name statit-backend --resource-group STATITgroup --min-replicas 1
+az containerapp update --name statit-frontend --resource-group STATITgroup --min-replicas 1
+az containerapp update --name statit-db --resource-group STATITgroup --min-replicas 1
+
+Turn azure off
+az containerapp update --name statit-frontend --resource-group STATITgroup --min-replicas 0
+az containerapp update --name statit-backend --resource-group STATITgroup --min-replicas 0
+az containerapp update --name statit-db --resource-group STATITgroup --min-replicas 0
+
+https://statit-frontend.bluemeadow-174af2a3.eastus.azurecontainerapps.io
 
 */
+
 
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
+// --- API HELPERS ---
 const API_BASE_URL = '/api/v1';
 
 const createUser = async (userData) => {
@@ -83,6 +114,7 @@ const getStorage = (key, defaultValue) => {
   return saved ? JSON.parse(saved) : defaultValue;
 };
 
+// --- STYLES ---
 const pageWrapperStyle = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', fontFamily: 'sans-serif', padding: '20px', paddingTop: '100px', boxSizing: 'border-box', textAlign: 'center', position: 'relative', backgroundColor: '#fdfdfd' };
 const topNavStyle = { position: 'fixed', top: 0, left: 0, width: '100vw', height: '75px', backgroundColor: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 30px', boxSizing: 'border-box', zIndex: 1000 };
 const logoStyle = { height: '50px', width: 'auto', cursor: 'pointer' };
@@ -92,6 +124,15 @@ const inputStyle = { padding: '12px', borderRadius: '8px', border: '1px solid #c
 const mainButtonStyle = { padding: '15px 20px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #8b5cf6', backgroundColor: '#fff', fontSize: '1.4rem', width: '380px', fontWeight: 'bold', transition: '0.2s', color: '#333' };
 const smallButtonStyle = { padding: '10px 18px', cursor: 'pointer', borderRadius: '6px', border: '2px solid #8b5cf6', backgroundColor: '#fff', fontSize: '1rem', fontWeight: 'bold', color: '#333', transition: '0.2s' };
 const funTitleStyle = { fontSize: '3.2rem', marginBottom: '40px', color: '#2c3e50', fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", cursive' };
+
+// Custom styles for our checkbox dropdowns
+const dropdownButtonStyle = { ...inputStyle, width: '220px', marginBottom: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: '#fff', textAlign: 'left', userSelect: 'none' };
+const dropdownMenuStyle = { position: 'absolute', top: '100%', left: 0, width: '100%', backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '8px', padding: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '5px', boxSizing: 'border-box', textAlign: 'left' };
+const checkboxLabelStyle = { display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem', userSelect: 'none' };
+
+// --- CONSTANTS ---
+const ALL_GENDERS = ["Non-binary", "Male", "Female"];
+const ALL_REGIONS = ["North America", "South America", "Europe", "Asia", "Africa", "Australia/Oceania", "Antarctica"];
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -175,7 +216,10 @@ const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) 
         <Route path="/global" element={<CategoryList title="Global Categories" categories={globalCategories} />} />
         <Route path="/local" element={<CategoryList title="Local Categories" categories={localCategories} />} />
         <Route path="/create" element={currentUser ? <CreateCategory currentUser={currentUser} setCategories={setCategories} /> : <Navigate to="/login" />} />
+        
+        {/* NEW ROUTING STRUCTURE */}
         <Route path="/ranking/:categoryId" element={<RankingPage categories={categories} currentUser={currentUser} />} />
+        <Route path="/submit/:categoryId" element={currentUser ? <SubmitStatPage categories={categories} currentUser={currentUser} /> : <Navigate to="/login" />} />
       </Routes>
     </>
   );
@@ -328,6 +372,101 @@ const CreateCategory = ({ currentUser, setCategories }) => {
   );
 };
 
+// --- DEDICATED SUBMISSION PAGE ---
+const SubmitStatPage = ({ categories, currentUser }) => {
+  const { categoryId } = useParams();
+  const navigate = useNavigate();
+  
+  const catInfo = categories.find(c => String(c.categoryId || c.category_id || c.id) === String(categoryId)) || { name: 'Loading...', units: '' };
+  
+  const [val, setVal] = useState("");
+  const [gender, setGender] = useState("Non-binary");
+  const [region, setRegion] = useState("North America");
+  const [isAnonForm, setIsAnonForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmission = async (e) => {
+    e.preventDefault();
+    const userId = currentUser?.id || currentUser?.userId || currentUser?.user_id;
+
+    if (val === "") return alert("Please enter a score.");
+    if (!userId) return alert("Error: User ID missing. Please log out and back in.");
+    
+    setIsSubmitting(true);
+
+    try {
+      await submitScore({
+        user_id: userId,
+        category_id: categoryId,
+        score: parseFloat(val),
+        tags: { "Gender": gender, "Region": region },
+        anonymous: isAnonForm,
+        isAnonymous: isAnonForm,
+        is_anonymous: isAnonForm
+      });
+      // Redirect directly to the leaderboard page upon success
+      navigate(`/ranking/${categoryId}`);
+    } catch (err) {
+      alert(`Failed to submit score: ${err.message}`);
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={pageWrapperStyle}>
+      <span onClick={() => navigate(-1)} style={{ ...backLinkStyle, cursor: 'pointer' }}>← Back to Rankings</span>
+      <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>Submit to {catInfo.name}</h2>
+      
+      <form onSubmit={handleSubmission} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '40px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Enter Your Stat</h3>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="0" disabled={isSubmitting} style={{ width: '120px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px', backgroundColor: isSubmitting ? '#f5f5f5' : 'white' }} required />
+          <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units || catInfo.units_of_measurement}</span>
+        </div>
+        
+        <select style={{ ...inputStyle, marginBottom: '0', width: '250px' }} value={gender} onChange={e => setGender(e.target.value)}>
+          <option value="Non-binary">Non-binary</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        
+        <select style={{ ...inputStyle, marginBottom: '0', width: '250px' }} value={region} onChange={e => setRegion(e.target.value)}>
+          <option value="North America">North America</option>
+          <option value="South America">South America</option>
+          <option value="Europe">Europe</option>
+          <option value="Asia">Asia</option>
+          <option value="Africa">Africa</option>
+          <option value="Australia/Oceania">Australia/Oceania</option>
+          <option value="Antarctica">Antarctica</option>
+        </select>
+        
+        <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '1rem', marginTop: '10px'}}>
+          <input type="checkbox" checked={isAnonForm} onChange={e => setIsAnonForm(e.target.checked)} disabled={isSubmitting} />
+          Submit Anonymously
+        </label>
+
+        <button 
+          type="submit" 
+          disabled={isSubmitting}
+          style={{ 
+            ...mainButtonStyle, 
+            width: '250px', 
+            fontSize: '1.1rem', 
+            backgroundColor: isSubmitting ? '#ccc' : '#8b5cf6', 
+            color: 'white',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            marginTop: '10px'
+          }}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Score'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+
+// --- PAGE X: THE LEADERBOARD PAGE ---
 const RankingPage = ({ categories, currentUser }) => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
@@ -337,13 +476,16 @@ const RankingPage = ({ categories, currentUser }) => {
   ) || { name: 'Loading...', units: '' };
   
   const [globalScores, setGlobalScores] = useState([]);
-  const [val, setVal] = useState("");
-  const [gender, setGender] = useState("Non-binary");
-  const [region, setRegion] = useState("North America");
   
+  // Custom multi-select state
+  const [showGlobal, setShowGlobal] = useState(true);
+  const [selectedGenders, setSelectedGenders] = useState([]);
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  
+  // To handle which dropdown is currently open (null, 'global', 'gender', 'region')
+  const [openDropdown, setOpenDropdown] = useState(null);
+
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [isAnonForm, setIsAnonForm] = useState(false);
-  const [tableView, setTableView] = useState("Global");
 
   const fetchLeaderboard = async () => {
     if (!categoryId || categoryId === 'undefined') return; 
@@ -388,51 +530,28 @@ const RankingPage = ({ categories, currentUser }) => {
     fetchLeaderboard();
   }, [categoryId, currentUser]);
 
-  const addEntry = async (e) => {
-    e.preventDefault();
-
-    if (hasSubmitted) return alert("You have already submitted a score for this category!");
-
-    const userId = currentUser?.id || currentUser?.userId || currentUser?.user_id;
-
-    if (val === "") return alert("Please enter a score.");
-    if (!userId) return alert("Error: User ID missing. Please log out and back in.");
-    if (!categoryId || categoryId === 'undefined') return alert("Error: Invalid Category ID. Please go back to the Categories page and click the category again.");
-    
-    const userIsAnon = isAnonForm;
-
-    try {
-      await submitScore({
-        user_id: userId,
-        category_id: categoryId,
-        score: parseFloat(val),
-        tags: { "Gender": gender, "Region": region },
-        anonymous: userIsAnon,
-        isAnonymous: userIsAnon,
-        is_anonymous: userIsAnon
-      });
-      setVal(""); 
-      setHasSubmitted(true); 
-      fetchLeaderboard();
-    } catch (err) {
-      alert(`Failed to submit score: ${err.message}`);
-    }
+  const toggleGender = (gender) => {
+    setSelectedGenders(prev => 
+      prev.includes(gender) ? prev.filter(g => g !== gender) : [...prev, gender]
+    );
   };
 
-  const genderScores = globalScores.filter(s => s.gender === gender);
-  const regionScores = globalScores.filter(s => s.region === region);
-  const intersectionScores = globalScores.filter(s => s.gender === gender && s.region === region);
+  const toggleRegion = (region) => {
+    setSelectedRegions(prev => 
+      prev.includes(region) ? prev.filter(r => r !== region) : [...prev, region]
+    );
+  };
 
-  const renderTable = (title, statsToRender) => (
-    <div key={title} style={{ width: '100%', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-      <h3 style={{ margin: '15px 0', fontSize: '1.5rem', color: '#8b5cf6', textAlign: 'center' }}>{title}</h3>
+  const renderTable = (title, statsToRender, keyIndex) => (
+    <div key={`${title}-${keyIndex}`} style={{ width: '100%', minWidth: '350px', maxWidth: '450px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', flex: '1 1 350px' }}>
+      <h3 style={{ margin: '15px 0', fontSize: '1.3rem', color: '#8b5cf6', textAlign: 'center' }}>{title}</h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
         <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white', zIndex: 1 }}>
           <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units || catInfo.units_of_measurement || 'Score'}</th><th>Name</th></tr>
         </thead>
         <tbody>
           {statsToRender.length === 0 ? (
-            <tr><td colSpan="3" style={{ padding: '20px', color: '#666' }}>No entries yet.</td></tr>
+            <tr><td colSpan="3" style={{ padding: '20px', color: '#666', textAlign: 'center' }}>No entries yet.</td></tr>
           ) : (
             statsToRender.map((stat, i) => {
               const actualRank = statsToRender.findIndex(s => s.value === stat.value) + 1;
@@ -460,76 +579,156 @@ const RankingPage = ({ categories, currentUser }) => {
     </div>
   );
 
+  // Dynamic logic for generating tables based on multi-select checkboxes
+  const generateTablesToDisplay = () => {
+    const tables = [];
+    
+    // 1. Show Global Table if checked
+    if (showGlobal) {
+      tables.push(renderTable('Global Ranking', globalScores, 'global'));
+    }
+
+    // 2. Determine if we are showing broad gender/region tables OR specific intersection tables
+    if (selectedGenders.length > 0 && selectedRegions.length === 0) {
+      // Only genders selected: show broad gender tables
+      selectedGenders.forEach((g, idx) => {
+        tables.push(renderTable(`${g} Ranking`, globalScores.filter(s => s.gender === g), `gender-${idx}`));
+      });
+    } else if (selectedRegions.length > 0 && selectedGenders.length === 0) {
+      // Only regions selected: show broad region tables
+      selectedRegions.forEach((r, idx) => {
+        tables.push(renderTable(`${r} Ranking`, globalScores.filter(s => s.region === r), `region-${idx}`));
+      });
+    } else if (selectedGenders.length > 0 && selectedRegions.length > 0) {
+      // BOTH genders and regions selected: only show the specific intersection tables
+      selectedGenders.forEach((g, gIdx) => {
+        selectedRegions.forEach((r, rIdx) => {
+          tables.push(
+            renderTable(`${g} in ${r}`, globalScores.filter(s => s.gender === g && s.region === r), `intersection-${gIdx}-${rIdx}`)
+          );
+        });
+      });
+    }
+
+    if (tables.length === 0) {
+      return <p style={{ color: '#999', fontStyle: 'italic', fontSize: '1.2rem' }}>Please select at least one leaderboard filter to display.</p>;
+    }
+
+    return tables;
+  };
+
   return (
     <div style={{ ...pageWrapperStyle, justifyContent: 'flex-start', paddingTop: '80px' }}>
       <span onClick={() => navigate(-1)} style={{ ...backLinkStyle, cursor: 'pointer' }}>← Back</span>
       <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>{catInfo.name} Rankings</h2>
       
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', marginBottom: '40px' }}>
-        {currentUser ? (
-          <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="0" disabled={hasSubmitted} style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px', backgroundColor: hasSubmitted ? '#f5f5f5' : 'white' }} required />
-              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units || catInfo.units_of_measurement}</span>
-            </div>
-            <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
-              <option value="Non-binary">Non-binary</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-            <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={region} onChange={e => setRegion(e.target.value)}>
-              <option value="North America">North America</option>
-              <option value="South America">South America</option>
-              <option value="Europe">Europe</option>
-              <option value="Asia">Asia</option>
-              <option value="Africa">Africa</option>
-              <option value="Australia/Oceania">Australia/Oceania</option>
-              <option value="Antarctica">Antarctica</option>
-            </select>
-            
-            <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '1rem', marginBottom: '5px'}}>
-              <input type="checkbox" checked={isAnonForm} onChange={e => setIsAnonForm(e.target.checked)} disabled={hasSubmitted} />
-              Submit Anonymously
-            </label>
+      {/* Invisible overlay to close dropdowns when clicking outside */}
+      {openDropdown && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99 }} onClick={() => setOpenDropdown(null)} />
+      )}
 
-            <button 
-              type="submit" 
-              disabled={hasSubmitted}
-              style={{ 
-                ...mainButtonStyle, 
-                width: '220px', 
-                fontSize: '1.1rem', 
-                backgroundColor: hasSubmitted ? '#ccc' : '#8b5cf6', 
-                color: 'white',
-                cursor: hasSubmitted ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {hasSubmitted ? 'Already Submitted' : 'Add Entry'}
-            </button>
-          </form>
+      {/* Dynamic Action Button / Text */}
+      <div style={{ marginBottom: '30px', zIndex: 1 }}>
+        {currentUser ? (
+          <button 
+            onClick={() => !hasSubmitted && navigate(`/submit/${categoryId}`)} 
+            disabled={hasSubmitted}
+            style={{ 
+              ...mainButtonStyle, 
+              width: '300px', 
+              backgroundColor: hasSubmitted ? '#ccc' : '#8b5cf6', 
+              color: 'white', 
+              cursor: hasSubmitted ? 'not-allowed' : 'pointer' 
+            }}
+          >
+            {hasSubmitted ? 'Already Submitted' : 'Submit Your Score'}
+          </button>
         ) : (
-           <p>Log in to submit a score.</p>
+          <p style={{ fontSize: '1.2rem', color: '#666', fontStyle: 'italic' }}>Log in to submit a score.</p>
         )}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '1400px' }}>
-        <select 
-          style={{ padding: '12px', fontSize: '1.1rem', borderRadius: '8px', marginBottom: '20px', border: '2px solid #8b5cf6', outline: 'none', cursor: 'pointer', width: '350px' }} 
-          value={tableView} 
-          onChange={e => setTableView(e.target.value)}
-        >
-          <option value="Global">Global Ranking</option>
-          <option value="Gender">{gender} Ranking</option>
-          <option value="Region">{region} Ranking</option>
-          <option value="Intersection">{gender} in {region} Ranking</option>
-        </select>
+      {/* Leaderboard Filters */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '1400px', zIndex: 100 }}>
+        
+        {/* Filter Controls Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', marginBottom: '30px', backgroundColor: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', width: '100%', maxWidth: '900px' }}>
+          
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            
+            {/* Global Options Dropdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', position: 'relative' }}>
+              <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#666', marginBottom: '5px' }}>Global Settings:</label>
+              <div 
+                style={dropdownButtonStyle} 
+                onClick={() => setOpenDropdown(openDropdown === 'global' ? null : 'global')}
+              >
+                <span>Global Options</span>
+                <span style={{ fontSize: '0.8rem' }}>▼</span>
+              </div>
+              
+              {openDropdown === 'global' && (
+                <div style={dropdownMenuStyle}>
+                  <label style={checkboxLabelStyle}>
+                    <input type="checkbox" checked={showGlobal} onChange={e => setShowGlobal(e.target.checked)} />
+                    Show Global Table
+                  </label>
+                </div>
+              )}
+            </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          {tableView === 'Global' && renderTable('Global Ranking', globalScores)}
-          {tableView === 'Gender' && renderTable(`${gender} Ranking`, genderScores)}
-          {tableView === 'Region' && renderTable(`${region} Ranking`, regionScores)}
-          {tableView === 'Intersection' && renderTable(`${gender} in ${region} Ranking`, intersectionScores)}
+            {/* Gender Filter Dropdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', position: 'relative' }}>
+              <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#666', marginBottom: '5px' }}>Filter by Gender:</label>
+              <div 
+                style={dropdownButtonStyle} 
+                onClick={() => setOpenDropdown(openDropdown === 'gender' ? null : 'gender')}
+              >
+                <span>{selectedGenders.length === 0 ? "Select Gender..." : `Selected (${selectedGenders.length})`}</span>
+                <span style={{ fontSize: '0.8rem' }}>▼</span>
+              </div>
+
+              {openDropdown === 'gender' && (
+                <div style={dropdownMenuStyle}>
+                  {ALL_GENDERS.map(g => (
+                    <label key={g} style={checkboxLabelStyle}>
+                      <input type="checkbox" checked={selectedGenders.includes(g)} onChange={() => toggleGender(g)} />
+                      {g}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Region Filter Dropdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', position: 'relative' }}>
+              <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#666', marginBottom: '5px' }}>Filter by Region:</label>
+              <div 
+                style={dropdownButtonStyle} 
+                onClick={() => setOpenDropdown(openDropdown === 'region' ? null : 'region')}
+              >
+                <span>{selectedRegions.length === 0 ? "Select Region..." : `Selected (${selectedRegions.length})`}</span>
+                <span style={{ fontSize: '0.8rem' }}>▼</span>
+              </div>
+
+              {openDropdown === 'region' && (
+                <div style={dropdownMenuStyle}>
+                  {ALL_REGIONS.map(r => (
+                    <label key={r} style={checkboxLabelStyle}>
+                      <input type="checkbox" checked={selectedRegions.includes(r)} onChange={() => toggleRegion(r)} />
+                      {r}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* Dynamic Tables Container */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', zIndex: 1 }}>
+          {generateTablesToDisplay()}
         </div>
       </div>
     </div>
