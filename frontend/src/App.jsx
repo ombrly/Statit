@@ -53,6 +53,7 @@ const getStorage = (key, defaultValue) => {
   return saved ? JSON.parse(saved) : defaultValue;
 };
 
+// --- STYLES ---
 const pageWrapperStyle = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', fontFamily: 'sans-serif', padding: '20px', paddingTop: '100px', boxSizing: 'border-box', textAlign: 'center', position: 'relative', backgroundColor: '#fdfdfd' };
 const topNavStyle = { position: 'fixed', top: 0, left: 0, width: '100vw', height: '75px', backgroundColor: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 30px', boxSizing: 'border-box', zIndex: 1000 };
 const logoStyle = { height: '50px', width: 'auto', cursor: 'pointer' };
@@ -60,42 +61,46 @@ const navLinksStyle = { display: 'flex', gap: '15px', alignItems: 'center' };
 const backLinkStyle = { position: 'absolute', top: '100px', left: '20px', textDecoration: 'none', color: '#8b5cf6', fontWeight: 'bold', fontSize: '1.1rem', zIndex: 10 };
 const inputStyle = { padding: '12px', borderRadius: '8px', border: '1px solid #ccc', width: '280px', marginBottom: '15px', fontSize: '1rem' };
 const mainButtonStyle = { padding: '15px 20px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #8b5cf6', backgroundColor: '#fff', fontSize: '1.4rem', width: '380px', fontWeight: 'bold', transition: '0.2s', color: '#333' };
-const smallButtonStyle = { padding: '10px 18px', cursor: 'pointer', borderRadius: '6px', border: '2px solid #8b5cf6', backgroundColor: '#fff', fontSize: '1rem', fontWeight: 'bold', color: '#333', transition: '0.2s' };
 const funTitleStyle = { fontSize: '3.2rem', marginBottom: '40px', color: '#2c3e50', fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", cursive' };
 
+// --- MAIN APP COMPONENT ---
 export default function App() {
-  const defaultPresets = [
-    { name: "Wealth", better: "large", unit: "$", type: "global" },
-    { name: "Health", better: "large", unit: "pts", type: "global" },
-    { name: "Speed", better: "small", unit: "sec", type: "global" }
-  ];
-  const [categories, setCategories] = useState(getStorage("categories", defaultPresets));
-  const [allStats, setAllStats] = useState(getStorage("allStats", {}));
-  const [users, setUsers] = useState(getStorage("users", []));
-  const [currentUser, setCurrentUser] = useState(getStorage("currentUser", null));
+  const [categories, setCategories] = useState([]);
+  const [currentUser, setCurrentUser] = useState(() => getStorage("currentUser", null));
   
-  const handleLogin = async (username, password) => {
-  try {
-    const response = await fetch('/api/login', {
-      method: 'POST', // We are sending data
-      headers: {
-        'Content-Type': 'application/json', // Telling the backend we are sending JSON
-      },
-      body: JSON.stringify({ username, password }) // The actual data
-    });
+  // Save user session when it changes
+  useEffect(() => {
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  }, [currentUser]);
 
-    if (response.ok) {
-      const userData = await response.json();
-      setCurrentUser(userData); // Log the user in on the frontend
-    } else {
-      alert("Invalid credentials!");
-    }
-  } catch (error) {
-    console.error("Login failed:", error);
-  }
-};
+  // Fetch categories from Azure Database on load
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        const categoryList = data.categories || data.content || data; 
+        setCategories(categoryList);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Tell React what to draw on the screen
+  return (
+    <Router>
+      <AppContent 
+        categories={categories} 
+        setCategories={setCategories}
+        currentUser={currentUser} 
+        setCurrentUser={setCurrentUser}
+      />
+    </Router>
+  );
 }
 
+// --- SUB-COMPONENTS ---
 const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) => {
   const navigate = useNavigate();
 
