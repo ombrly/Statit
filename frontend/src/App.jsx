@@ -4,11 +4,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, N
 const API_BASE_URL = 'http://statit-backend-api.eastus.azurecontainer.io:8080/api/v1';
 
 // --- HELPERS ---
-const getStorage = (key, defaultValue) => {
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : defaultValue;
-};
-
 const getUserByUsername = async (username) => {
   const response = await fetch(`${API_BASE_URL}/users/${username}`);
   if (!response.ok) throw new Error('User not found');
