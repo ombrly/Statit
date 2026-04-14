@@ -78,38 +78,41 @@ export default function App() {
 }
 
 // --- APP CONTENT ---
-const AppContent = ({ categories, setCategories, allStats, setAllStats, users, setUsers, currentUser, setCurrentUser }) => {
-  const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+export default function App() {
+  const [categories, setCategories] = useState([]);
+  const [currentUser, setCurrentUser] = useState(() => getStorage('currentUser', null));
 
-  const logout = () => setCurrentUser(null);
+  // Save user session
+  useEffect(() => {
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  }, [currentUser]);
 
+  // Fetch categories from your Azure Database on load
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        const categoryList = data.categories || data.content || data; 
+        setCategories(categoryList);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // THIS is what was missing! React needs to know what to draw.
   return (
-    <>
-      {!isAuthPage && (
-        <div style={topNavStyle}>
-          {currentUser && (
-            <>
-              <Link to="/profile"><button style={smallButtonStyle}>Profile</button></Link>
-              <button onClick={logout} style={smallButtonStyle}>Log out</button>
-            </>
-          )}
-        </div>
-      )}
-
-      <Routes>
-        <Route path="/" element={currentUser ? <Home /> : <Navigate to="/login" />} />
-        <Route path="/login" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="login" users={users} setCurrentUser={setCurrentUser} />} />
-        <Route path="/signup" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="signup" users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} />} />
-        <Route path="/profile" element={currentUser ? <ProfilePage currentUser={currentUser} setUsers={setUsers} setCurrentUser={setCurrentUser} /> : <Navigate to="/login" />} />
-        <Route path="/global" element={currentUser ? <CategoryList title="Global Categories" categories={categories.filter(c => c.type === 'global')} /> : <Navigate to="/login" />} />
-        <Route path="/created" element={currentUser ? <CategoryList title="Your Created Categories" categories={categories.filter(c => c.type !== 'global')} /> : <Navigate to="/login" />} />
-        <Route path="/create" element={currentUser ? <CreateCategory setCategories={setCategories} /> : <Navigate to="/login" />} />
-        <Route path="/ranking/:categoryName" element={currentUser ? <RankingPage categories={categories} allStats={allStats} setAllStats={setAllStats} currentUser={currentUser} /> : <Navigate to="/login" />} />
-      </Routes>
-    </>
+    <Router>
+      <AppContent 
+        categories={categories} 
+        setCategories={setCategories}
+        currentUser={currentUser} 
+        setCurrentUser={setCurrentUser}
+      />
+    </Router>
   );
-};
+}
 
 // --- HOME PAGE ---
 const Home = () => (
